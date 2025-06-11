@@ -10,16 +10,20 @@ use Magento\Payment\Api\Data\PaymentAdditionalInfoInterfaceFactory;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Sales\Api\Data\OrderSearchResultInterfaceFactory as SearchResultFactory;
 use Magento\Sales\Model\ResourceModel\Metadata;
-use Magento\Sales\Model\ResourceModel\Order\CollectionFactory;
 use Magento\Tax\Api\OrderTaxManagementInterface;
 use Magento\Sales\Api\Data\OrderExtensionFactory;
 use Macopedia\Allegro\Model\ResourceModel\Order as ResourceModel;
 
 class OrderRepository extends \Magento\Sales\Model\OrderRepository implements OrderRepositoryInterface
 {
-
     /** @var ResourceModel */
     private $resourceModel;
+
+    /** @var OrderExtensionFactory */
+    private $orderExtensionFactory;
+
+    /** @var OrderTaxManagementInterface */
+    private $orderTaxManagement;
 
     /**
      * OrderRepository constructor.
@@ -27,31 +31,36 @@ class OrderRepository extends \Magento\Sales\Model\OrderRepository implements Or
      * @param SearchResultFactory $searchResultFactory
      * @param ResourceModel $resourceModel
      * @param CollectionProcessorInterface|null $collectionProcessor
-     * @param OrderExtensionFactory|null $orderExtensionFactory
      * @param OrderTaxManagementInterface|null $orderTaxManagement
      * @param PaymentAdditionalInfoInterfaceFactory|null $paymentAdditionalInfoFactory
      * @param JsonSerializer|null $serializer
+     * @param OrderExtensionFactory|null $orderExtensionFactory
      */
+
+    
+
     public function __construct(
         Metadata $metadata,
         SearchResultFactory $searchResultFactory,
         ResourceModel $resourceModel,
         CollectionProcessorInterface $collectionProcessor = null,
-        OrderExtensionFactory $orderExtensionFactory = null,
         OrderTaxManagementInterface $orderTaxManagement = null,
         PaymentAdditionalInfoInterfaceFactory $paymentAdditionalInfoFactory = null,
-        JsonSerializer $serializer = null
+        JsonSerializer $serializer = null,
+        OrderExtensionFactory $orderExtensionFactory = null
     ) {
+        $this->resourceModel = $resourceModel;
+        $this->orderExtensionFactory = $orderExtensionFactory;
+        $this->orderTaxManagement = $orderTaxManagement;
+
         parent::__construct(
             $metadata,
             $searchResultFactory,
             $collectionProcessor,
-            $orderExtensionFactory,
             $orderTaxManagement,
             $paymentAdditionalInfoFactory,
             $serializer
         );
-        $this->resourceModel = $resourceModel;
     }
 
     /**

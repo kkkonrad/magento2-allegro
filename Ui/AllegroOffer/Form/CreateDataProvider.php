@@ -28,6 +28,9 @@ class CreateDataProvider extends DataProvider
     /** @var AllegroPrice */
     protected $allegroPrice;
 
+    /** @var array */
+    protected $_loadedData;
+
     /**
      * CreateDataProvider constructor.
      * @param string $name

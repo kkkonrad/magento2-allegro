@@ -13,6 +13,7 @@ use Magento\Framework\Api\ImageProcessorInterface;
 use Magento\Framework\Api\SearchCriteria\CollectionProcessorInterface;
 use Magento\Framework\EntityManager\Operation\Read\ReadExtensions;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Catalog\Api\Data\ProductSearchResultsInterfaceFactory;
 
 class ProductRepository extends \Magento\Catalog\Model\ProductRepository implements ProductRepositoryInterface
 {
@@ -28,8 +29,7 @@ class ProductRepository extends \Magento\Catalog\Model\ProductRepository impleme
 
     public function __construct(
         ProductFactory $productFactory,
-        \Magento\Catalog\Controller\Adminhtml\Product\Initialization\Helper $initializationHelper,
-        \Magento\Catalog\Api\Data\ProductSearchResultsInterfaceFactory $searchResultsFactory,
+        ProductSearchResultsInterfaceFactory $searchResultsFactory,
         \Magento\Catalog\Model\ResourceModel\Product\CollectionFactory $collectionFactory,
         \Magento\Framework\Api\SearchCriteriaBuilder $searchCriteriaBuilder,
         \Magento\Catalog\Api\ProductAttributeRepositoryInterface $attributeRepository,
@@ -54,7 +54,6 @@ class ProductRepository extends \Magento\Catalog\Model\ProductRepository impleme
     ) {
         parent::__construct(
             $productFactory,
-            $initializationHelper,
             $searchResultsFactory,
             $collectionFactory,
             $searchCriteriaBuilder,
