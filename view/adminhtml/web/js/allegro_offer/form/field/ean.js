@@ -3,8 +3,9 @@ define([
     'mage/storage',
     'Magento_Ui/js/modal/alert',
     'mage/translate',
+    'uiRegistry',
     'Macopedia_Allegro/js/allegro_offer/validation/ean'
-], function (Input, storage, alert, $t) {
+], function (Input, storage, alert, $t, registry) {
     'use strict';
 
     return Input.extend({
@@ -36,7 +37,21 @@ define([
                 if (response[0] && response[0].id) {
                     self.source.set('data.allegro.product_id', response[0].id);
                     self.source.set('data.allegro.allegro_product_name', response[0].name);
-                    // console.log(self.source);
+                   
+                    // Trigger category field update to automatically load attributes
+                    var categoryComponent = registry.get(self.parentName + '.category');
+                   
+                    if (categoryComponent) {
+                        // Set the initialValue and trigger the category loading process
+                        categoryComponent.initialValue = response[0].category;
+                        categoryComponent._initializeValue();
+                        console.log('Category component initialized with value:', response[0].category);
+                    } else {
+                        console.log('Category component not found at path:', self.parentName + '.category');
+                    }
+                   
+                    console.log('Product found and category set:', response[0].category);
+                    console.log(self.source);
                 } else {
                     alert({
                         title: $t('Error'),

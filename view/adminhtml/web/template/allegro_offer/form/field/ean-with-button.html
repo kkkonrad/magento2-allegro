@@ -28,7 +28,7 @@
                         'aria-describedby': noticeId
                     }"
         />
-        <button type="button" class="action-secondary" data-bind="click: searchProductByEan, disable: !value()">
+        <button type="button" class="action-secondary" data-bind="click: searchProductByEan, disable: !value()" onclick="event.preventDefault();">
             <span data-bind="i18n: 'Search in Allegro'"></span>
         </button>
     </div>
