@@ -85,6 +85,7 @@
                 <item name="OrderImport" xsi:type="object">Macopedia\Allegro\Console\Command\ImportOrder</item>
                 <item name="OrdersWithErrorsImport" xsi:type="object">Macopedia\Allegro\Console\Command\ImportOrdersWithErrors</item>
                 <item name="CleanOffersMapping" xsi:type="object">Macopedia\Allegro\Console\Command\CleanOffersMapping</item>
+                <item name="allegro_product_search" xsi:type="object">Macopedia\Allegro\Console\Command\SearchProductByEanCommand</item>
             </argument>
         </arguments>
     </type>
@@ -142,6 +143,28 @@
     <type name="Macopedia\Allegro\Console\Command\ImportOrder">
         <arguments>
             <argument name="processor" xsi:type="object">Macopedia\Allegro\Model\OrderImporter\Processor\Proxy</argument>
+        </arguments>
+    </type>
+
+    <!-- Product Offer -->
+    <preference for="Macopedia\Allegro\Api\Data\ProductOfferInterface" type="Macopedia\Allegro\Model\Data\ProductOffer" />
+    <preference for="Macopedia\Allegro\Api\ProductOfferRepositoryInterface" type="Macopedia\Allegro\Model\Api\ProductOfferRepository" />
+    
+    <type name="Macopedia\Allegro\Model\Api\ProductOfferRepository">
+        <arguments>
+            <argument name="resource" xsi:type="object">Macopedia\Allegro\Model\ResourceModel\ProductOffer</argument>
+            <argument name="productOfferFactory" xsi:type="object">Macopedia\Allegro\Model\Api\ProductOfferFactory</argument>
+        </arguments>
+    </type>
+
+    <!-- Product Catalog -->
+    <preference for="Macopedia\Allegro\Api\Data\ProductInterface" type="Macopedia\Allegro\Model\Data\Product" />
+    <preference for="Macopedia\Allegro\Api\ProductCatalogRepositoryInterface" type="Macopedia\Allegro\Model\Api\ProductCatalogRepository" />
+    
+    <type name="Macopedia\Allegro\Model\Api\ProductCatalogRepository">
+        <arguments>
+            <argument name="resource" xsi:type="object">Macopedia\Allegro\Model\ResourceModel\ProductCatalog</argument>
+            <argument name="productFactory" xsi:type="object">Macopedia\Allegro\Model\Api\ProductFactory</argument>
         </arguments>
     </type>
 

@@ -20,6 +20,7 @@ use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Sales\Api\Data\OrderInterface;
 use Magento\Framework\Stdlib\DateTime\DateTime;
 use Macopedia\Allegro\Model\Configuration;
+use Macopedia\Allegro\Model\OrderRepository;
 use Magento\Framework\App\ResourceConnection;
 
 class Processor
@@ -36,7 +37,7 @@ class Processor
     /** @var OrderLogRepositoryInterface */
     private $orderLogRepository;
 
-    /** @var OrderRepositoryInterface */
+    /** @var OrderRepositoryInterface | OrderRepository */
     private $orderRepository;
 
     /** @var DateTime */

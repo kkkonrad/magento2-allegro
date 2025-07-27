@@ -44,8 +44,10 @@ abstract class AbstractImportOrders extends Command
         $output->writeln('Order import start');
 
         $info = $this->createOrderImporter()->execute();
-
+       
         $output->writeln($info->getMessage());
+        
+        return Command::SUCCESS;
     }
 
     /**

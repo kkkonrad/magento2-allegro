@@ -57,6 +57,8 @@ class ViewProductButton extends Container
     private function getButtonData()
     {
         $productId = $this->_request->getParam('id');
+
+        /** @var \Magento\Catalog\Model\Product $product */
         $product = $this->productRepository->getById($productId);
 
         if ($product->getData('allegro_offer_id')) {

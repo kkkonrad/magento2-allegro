@@ -77,7 +77,7 @@ abstract class AbstractResource
      * @throws ClientResponseException
      * @throws ClientResponseErrorException
      */
-    protected function requestGet($uri, array $params = [], $isBeta = false)
+    public function requestGet($uri, array $params = [], $isBeta = false)
     {
         return $this->sendRequest($uri, MagentoRequest::HTTP_METHOD_GET, $params, $isBeta);
     }
@@ -91,7 +91,7 @@ abstract class AbstractResource
      * @throws ClientResponseException
      * @throws ClientResponseErrorException
      */
-    protected function cachedRequestGet($uri, array $params = [], $isBeta = false)
+    public function cachedRequestGet($uri, array $params = [], $isBeta = false)
     {
         \Magento\Framework\Profiler::start(__CLASS__ . '::' . __METHOD__ . '::' . $uri);
         $identifier = sha1($this->serializer()->serialize([$uri, MagentoRequest::HTTP_METHOD_GET, $params, $isBeta]));
@@ -114,9 +114,24 @@ abstract class AbstractResource
      * @throws ClientResponseException
      * @throws ClientResponseErrorException
      */
-    protected function requestPost($uri, array $params = [], $isBeta = false)
+    public function requestPost($uri, array $params = [], $isBeta = false)
     {
         return $this->sendRequest($uri, MagentoRequest::HTTP_METHOD_POST, $params, $isBeta);
+    }
+
+    
+    /**
+     * @param string $uri
+     * @param array  $params
+     * @param bool   $isBeta
+     * @return array
+     * @throws ClientException
+     * @throws ClientResponseException
+     * @throws ClientResponseErrorException
+     */
+    public function requestDelete($uri, array $params = [], $isBeta = false)
+    {
+        return $this->sendRequest($uri, MagentoRequest::HTTP_METHOD_DELETE, $params, $isBeta);
     }
 
     /**
@@ -127,7 +142,7 @@ abstract class AbstractResource
      * @throws ClientResponseException
      * @throws ClientResponseErrorException
      */
-    protected function requestPut($uri, array $params = [])
+    public function requestPut($uri, array $params = [])
     {
         return $this->sendRequest($uri, MagentoRequest::HTTP_METHOD_PUT, $params);
     }

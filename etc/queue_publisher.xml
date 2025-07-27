@@ -5,4 +5,5 @@
     <publisher topic="allegro.change.stock.db">
         <connection name="db" exchange="allegro.api" />
     </publisher>
+      <publisher topic="product_alert" disabled="true"/>
 </config>

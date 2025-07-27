@@ -16,6 +16,8 @@ use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Exception\LocalizedException;
+use Macopedia\Allegro\Api\ProductOfferRepositoryInterface;
+use Macopedia\Allegro\Api\Data\ProductOfferInterfaceFactory;
 
 /**
  * Save controller class
@@ -26,19 +28,31 @@ class Save extends Offer
     /** @var AfterSalesServicesInterfaceFactory */
     private $afterSalesServicesFactory;
 
+    /** @var ProductOfferRepositoryInterface */
+    private $productOfferRepository;
+
+    /** @var ProductOfferInterfaceFactory */
+    private $productOfferFactory;
+
     /**
      * Save constructor.
      * @param Context $context
      * @param \Macopedia\Allegro\Controller\Adminhtml\Offer\Context $offerContext
      * @param AfterSalesServicesInterfaceFactory $afterSalesServicesFactory
+     * @param ProductOfferRepositoryInterface $productOfferRepository
+     * @param ProductOfferInterfaceFactory $productOfferFactory
      */
     public function __construct(
         Context $context,
         OfferContext $offerContext,
-        AfterSalesServicesInterfaceFactory $afterSalesServicesFactory
+        AfterSalesServicesInterfaceFactory $afterSalesServicesFactory,
+        ProductOfferRepositoryInterface $productOfferRepository,
+        ProductOfferInterfaceFactory $productOfferFactory,
     ) {
         parent::__construct($context, $offerContext);
         $this->afterSalesServicesFactory = $afterSalesServicesFactory;
+        $this->productOfferRepository = $productOfferRepository;
+        $this->productOfferFactory = $productOfferFactory;
     }
 
     /**
@@ -46,31 +60,22 @@ class Save extends Offer
      */
     public function execute()
     {
-        $offer = null;
-
+   
         try {
             $data = $this->getRequest()->getParam('allegro');
-
-            $product = false;
-            $productId = $data['product'] ?? '';
-            if ($productId) {
-                $product = $this->productRepository->getById($productId);
+            $data['seller_id'] = $this->credentials->getClientId();
+            if (!empty($data['product_id'])) {
+                $offerId = $this->saveProductOffer($data);
+                $this->messageManager->addSuccessMessage(__('Product offer saved successfully'));
+                return $this->createRedirectEditResult($offerId);
             }
 
+            // Fallback to old logic if product_id is not present
             $offer = $this->initializeOffer($data);
             $this->offerRepository->save($offer);
+            $offerId = $offer->getId();
 
-            if ($product) {
-                $product->setData('allegro_offer_id', $offer->getId());
-
-                try {
-                    $this->productRepository->save($product);
-                } catch (CouldNotSaveException $e) {
-                    $this->messageManager->addWarningMessage(
-                        __('Could not assign offer id to product. Please update product data with proper offer ID manually')//phpcs:ignore
-                    );
-                }
-            }
+            $this->handleProductLink($offerId, $data);
 
             if ($offer->isValid()) {
                 $this->messageManager->addSuccessMessage(__('Offer saved successfully'));
@@ -84,7 +89,7 @@ class Save extends Offer
                     );
             }
 
-            return $this->createRedirectEditResult($offer->getId());
+            return $this->createRedirectEditResult($offerId);
 
         } catch (LocalizedException $e) {
             $this->logger->critical($e);
@@ -94,11 +99,54 @@ class Save extends Offer
             $this->messageManager->addErrorMessage(__('Something went wrong'));
         }
 
-        if ($offer !== null && $offer->getId() !== null) {
-            return $this->createRedirectEditResult($offer->getId());
+        return $this->createRedirectIndexResult();
+    }
+
+    /**
+     * @param array $data
+     * @return string
+     */
+    private function saveProductOffer(array $data)
+    {
+        $productOffer = $this->productOfferFactory->create();
+        $productOffer->setProductId($data['product_id']);
+        $productOffer->setPrice($data['price']);
+        $productOffer->setQuantity($data['qty']);
+        $productOffer->setStatus('ACTIVE');
+        $productOffer->setSellerId($this->credentials->getClientId());
+        // Or determine status based on form data
+        // TODO: map other fields like delivery, payments etc.
+
+        $productOffer->setParameters($data['parameters'] ?? []);
+        $productOffer->setDeliveryOptions($data['delivery']['options'] ?? []);
+        $productOffer->setPayments($data['payments'] ?? []);
+
+        return $this->productOfferRepository->save($productOffer);
+    }
+
+    /**
+     * @param string $offerId
+     * @param array $data
+     */
+    private function handleProductLink(string $offerId, array $data)
+    {
+        $productId = $data['product'] ?? '';
+        if (!$productId) {
+            return;
         }
 
-        return $this->createRedirectIndexResult();
+        try {
+            $product = $this->productRepository->getById($productId);
+            $product->setData('allegro_offer_id', $offerId);
+            if (!empty($data['product_id'])) {
+                $product->setData('allegro_product_id', $data['product_id']);
+            }
+            $this->productRepository->save($product);
+        } catch (\Exception $e) {
+            $this->messageManager->addWarningMessage(
+                __('Could not assign offer id to product. Please update product data with proper offer ID manually')
+            );
+        }
     }
 
     /**

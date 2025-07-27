@@ -1,0 +1,35 @@
+<!--
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
+<div class="admin__field field"
+     data-bind="
+        visible: visible,
+        attr: {
+            'data-index': index
+        },
+        css: $data.additionalClasses"
+     data-index="index">
+    <label class="label admin__field-label" data-bind="attr: {for: uid}">
+        <span data-bind="text: label"/>
+    </label>
+    <div class="control admin__field-control">
+        <input class="input-text admin__control-text" type="text"
+               data-bind="
+                    value: value,
+                    valueUpdate: valueUpdate,
+                    hasFocus: focused,
+                    attr: {
+                        name: inputName,
+                        id: uid,
+                        disabled: disabled,
+                        'aria-describedby': noticeId
+                    }"
+        />
+        <button type="button" class="action-secondary" data-bind="click: searchProductByEan, disable: !value()">
+            <span data-bind="i18n: 'Search in Allegro'"></span>
+        </button>
+    </div>
+</div> 
