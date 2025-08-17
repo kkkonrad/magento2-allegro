@@ -102,4 +102,103 @@ interface ProductOfferInterface
      * @return $this
      */
     public function setPayments(array $payments): self;
+
+    /**
+     * @return string|null
+     */
+    public function getCategory(): ?string;
+
+    /**
+     * @param string $category
+     * @return $this
+     */
+    public function setCategory(string $category): self;
+
+    /**
+     * @return string|null
+     */
+    public function getName(): ?string;
+
+    /**
+     * @param string $name
+     * @return $this
+     */
+    public function setName(string $name): self;
+
+    /**
+     * @return array
+     */
+    public function getSellingMode(): array;
+
+    /**
+     * @param array $sellingMode
+     * @return $this
+     */
+    public function setSellingMode(array $sellingMode): self;
+
+    /**
+     * @return array
+     */
+    public function getLocation(): array;
+
+    /**
+     * @param array $location
+     * @return $this
+     */
+    public function setLocation(array $location): self;
+
+    /**
+     * @return array
+     */
+    public function getImages(): array;
+
+    /**
+     * @param array $images
+     * @return $this
+     */
+    public function setImages(array $images): self;
+
+    /**
+     * @return array
+     */
+    public function getDescription(): array;
+
+    /**
+     * @param array $description
+     * @return $this
+     */
+    public function setDescription(array $description): self;
+
+    /**
+     * @return string|null
+     */
+    public function getExternalId(): ?string;
+
+    /**
+     * @param string $externalId
+     * @return $this
+     */
+    public function setExternalId(string $externalId): self;
+
+    /**
+     * @return array
+     */
+    public function getAfterSalesServices(): array;
+
+    /**
+     * @param array $afterSalesServices
+     * @return $this
+     */
+    public function setAfterSalesServices(array $afterSalesServices): self;
+
+    /**
+     * @return array
+     */
+    public function getAttachments(): array;
+
+    /**
+     * @param array $attachments
+     * @return $this
+     */
+    public function setAttachments(array $attachments): self;
 } 

@@ -12,6 +12,11 @@ use Magento\Framework\ObjectManagerInterface;
 
 class ParameterFactory implements ParameterInterfaceFactoryInterface
 {
+    const TYPES = [
+        ParameterDefinitionInterface::FRONTEND_TYPE_RANGE => RangeInterface::class,
+        ParameterDefinitionInterface::FRONTEND_TYPE_VALUES => ValuesInterface::class,
+        ParameterDefinitionInterface::FRONTEND_TYPE_VALUES_IDS => ValuesIdsInterface::class,
+    ];
 
     /** @var ObjectManagerInterface */
     private $objectManager;

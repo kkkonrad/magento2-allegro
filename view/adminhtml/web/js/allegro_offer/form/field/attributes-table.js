@@ -66,7 +66,6 @@ define([
             var valueSubscribers = this.value._subscriptions;
             this.value = ko.computed(this._computedValue, this);
             this.value._subscriptions = valueSubscribers;
-            this.attributesLoaded(true);
         },
 
         _resetValue: function () {
@@ -137,11 +136,11 @@ define([
                 attributes.push(self._createAttribute(attributeDefinition));
             });
 
+            console.log('Processing response with', attributes.length, 'attributes');
             self.attributes(attributes);
-
-            if (!self.attributesLoaded()) {
-                self._initializeValue();
-            }
+            self._initializeValue();
+            self.attributesLoaded(true);
+            console.log('Attributes loaded and initialized');
         },
 
         _createAttribute: function (attributeDefinition) {

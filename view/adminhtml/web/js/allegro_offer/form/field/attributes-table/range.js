@@ -25,11 +25,11 @@ define([
         },
 
         initializeValue: function (value) {
-            if (value === undefined || value === null || (Array.isArray(value) && value.length < 1)) {
+            if (value === undefined || value === null) {
                 return;
             }
-            this.inputValueMin = value.minValue;
-            this.inputValueMin = value.maxValue;
+            this.inputValueMin(value.minValue || '');
+            this.inputValueMax(value.maxValue || '');
         }
 
     });

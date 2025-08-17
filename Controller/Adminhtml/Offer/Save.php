@@ -4,7 +4,6 @@ namespace Macopedia\Allegro\Controller\Adminhtml\Offer;
 
 use Macopedia\Allegro\Api\Data\ImageInterface;
 use Macopedia\Allegro\Api\Data\Offer\AfterSalesServicesInterface;
-use Macopedia\Allegro\Api\Data\Offer\AfterSalesServicesInterfaceFactory;
 use Macopedia\Allegro\Api\Data\Offer\LocationInterface;
 use Macopedia\Allegro\Api\Data\OfferInterface;
 use Macopedia\Allegro\Api\Data\ParameterInterface;
@@ -17,7 +16,8 @@ use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Exception\LocalizedException;
 use Macopedia\Allegro\Api\ProductOfferRepositoryInterface;
-use Macopedia\Allegro\Api\Data\ProductOfferInterfaceFactory;
+use Macopedia\Allegro\Model\Api\ProductOfferFactory;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 
 /**
  * Save controller class
@@ -25,29 +25,29 @@ use Macopedia\Allegro\Api\Data\ProductOfferInterfaceFactory;
 class Save extends Offer
 {
 
-    /** @var AfterSalesServicesInterfaceFactory */
+    /** @var AfterSalesServicesInterface */
     private $afterSalesServicesFactory;
 
     /** @var ProductOfferRepositoryInterface */
     private $productOfferRepository;
 
-    /** @var ProductOfferInterfaceFactory */
+    /** @var ProductOfferFactory */
     private $productOfferFactory;
 
     /**
      * Save constructor.
      * @param Context $context
      * @param \Macopedia\Allegro\Controller\Adminhtml\Offer\Context $offerContext
-     * @param AfterSalesServicesInterfaceFactory $afterSalesServicesFactory
+     * @param AfterSalesServicesInterface $afterSalesServicesFactory
      * @param ProductOfferRepositoryInterface $productOfferRepository
-     * @param ProductOfferInterfaceFactory $productOfferFactory
+     * @param ProductOfferFactory $productOfferFactory
      */
     public function __construct(
         Context $context,
         OfferContext $offerContext,
-        AfterSalesServicesInterfaceFactory $afterSalesServicesFactory,
+        AfterSalesServicesInterface $afterSalesServicesFactory,
         ProductOfferRepositoryInterface $productOfferRepository,
-        ProductOfferInterfaceFactory $productOfferFactory,
+        ProductOfferFactory $productOfferFactory,
     ) {
         parent::__construct($context, $offerContext);
         $this->afterSalesServicesFactory = $afterSalesServicesFactory;
@@ -109,17 +109,63 @@ class Save extends Offer
     private function saveProductOffer(array $data)
     {
         $productOffer = $this->productOfferFactory->create();
+        
+        // WYMAGANE POLA dla API
+        
+        // 1. Nazwa oferty (wymagane)
+        $name = $data['name'] ?? $data['title'] ?? 'Oferta produktu';
+        $productOffer->setName($name);
+        
+        // 2. Selling Mode z ceną (wymagane)
+        $productOffer->setSellingMode([
+            'format' => 'BUY_NOW',
+            'price' => [
+                'amount' => (string)$data['price'],
+                'currency' => 'PLN'
+            ]
+        ]);
+        
+        // 3. Lokalizacja (wymagane)
+        $productOffer->setLocation([
+            'city' => $this->scopeConfig->getValue('allegro/origin/city') ?: 'Warszawa',
+            'countryCode' => $this->scopeConfig->getValue('allegro/origin/country_id') ?: 'PL',
+            'postCode' => $this->scopeConfig->getValue('allegro/origin/post_code') ?: '00-001',
+            'province' => $this->scopeConfig->getValue('allegro/origin/province') ?: 'MAZOWIECKIE'
+        ]);
+        
+        // Pozostałe pola
         $productOffer->setProductId($data['product_id']);
         $productOffer->setPrice($data['price']);
         $productOffer->setQuantity($data['qty']);
         $productOffer->setStatus('ACTIVE');
         $productOffer->setSellerId($this->credentials->getClientId());
-        // Or determine status based on form data
-        // TODO: map other fields like delivery, payments etc.
-
-        $productOffer->setParameters($data['parameters'] ?? []);
-        $productOffer->setDeliveryOptions($data['delivery']['options'] ?? []);
-        $productOffer->setPayments($data['payments'] ?? []);
+        
+        // Ustaw kategorię z danych produktu lub z formularza
+        if (!empty($data['category'])) {
+            $productOffer->setCategory($data['category']);
+        }
+        
+        // Ustaw parametry jeśli są dostępne
+        if (!empty($data['parameters'])) {
+            $productOffer->setParameters($data['parameters']);
+        }
+        
+        // Ustaw opcje dostawy
+        $deliveryOptions = [];
+        if (!empty($data['delivery']['shipping_rates_id'])) {
+            $deliveryOptions['shipping_rates_id'] = $data['delivery']['shipping_rates_id'];
+        }
+        if (!empty($data['delivery']['handling_time'])) {
+            $deliveryOptions['handling_time'] = $data['delivery']['handling_time'];
+        }
+        $productOffer->setDeliveryOptions($deliveryOptions);
+        
+        // Ustaw płatności
+        $payments = [];
+        if (!empty($data['payments']['invoice'])) {
+            $payments['invoice'] = $data['payments']['invoice'];
+        }
+        $productOffer->setPayments($payments);
 
         return $this->productOfferRepository->save($productOffer);
     }
@@ -237,8 +283,8 @@ class Save extends Offer
      */
     private function initializeAfterSalesServices(array $data): AfterSalesServicesInterface
     {
-        /** @var AfterSalesServicesInterface $afterSalesServices */
-        $afterSalesServices = $this->afterSalesServicesFactory->create();
+        // Używamy bezpośrednio interfejsu zamiast factory
+        $afterSalesServices = $this->afterSalesServicesFactory;
 
         if (!empty($data['implied_warranty'])) {
             $afterSalesServices->setImpliedWarrantyId($data['implied_warranty']);

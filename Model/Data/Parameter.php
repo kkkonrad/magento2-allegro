@@ -53,4 +53,13 @@ abstract class Parameter extends DataObject implements ParameterInterface
         }
         return $result;
     }
+
+    /**
+     * @param mixed $value
+     * @return void
+     */
+    public function setValue($value)
+    {
+        $this->setData('value', $value);
+    }
 }

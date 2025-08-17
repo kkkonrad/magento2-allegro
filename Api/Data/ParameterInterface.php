@@ -31,4 +31,10 @@ interface ParameterInterface
      * @return bool
      */
     public function isValueEmpty(): bool;
+
+    /**
+     * @param mixed $value
+     * @return void
+     */
+    public function setValue($value);
 }

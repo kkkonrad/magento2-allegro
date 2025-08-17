@@ -17,14 +17,29 @@ define([
         },
 
         initializeValue: function (value) {
-            if (value === undefined || value === null || (Array.isArray(value) && value.length < 1)) {
+            if (value === undefined || value === null) {
                 return;
             }
+            
+            // Handle array of values
+            if (Array.isArray(value)) {
+                if (value.length === 0) {
+                    return;
+                }
+                if (this.hasRestriction('multipleChoices') && this.getRestrictionValue('multipleChoices')) {
+                    this.inputValue(value);
+                } else {
+                    this.inputValue(value[0]);
+                }
+                return;
+            }
+            
+            // Handle single value
             if (this.hasRestriction('multipleChoices') && this.getRestrictionValue('multipleChoices')) {
+                this.inputValue([value]);
+            } else {
                 this.inputValue(value);
-                return;
             }
-            this.inputValue(value[0]);
         },
 
         _computedValue: function () {

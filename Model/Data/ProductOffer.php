@@ -29,7 +29,7 @@ class ProductOffer extends DataObject implements ProductOfferInterface
      */
     public function getProductId(): string
     {
-        return $this->getData('product_id');
+        return $this->getData('product_id') ?: '';
     }
 
     /**
@@ -46,7 +46,7 @@ class ProductOffer extends DataObject implements ProductOfferInterface
      */
     public function getSellerId(): string
     {
-        return $this->getData('seller_id');
+        return $this->getData('seller_id') ?: '';
     }
 
     /**
@@ -97,7 +97,7 @@ class ProductOffer extends DataObject implements ProductOfferInterface
      */
     public function getStatus(): string
     {
-        return $this->getData('status');
+        return $this->getData('status') ?: '';
     }
 
     /**
@@ -158,5 +158,158 @@ class ProductOffer extends DataObject implements ProductOfferInterface
     public function setPayments(array $payments): self
     {
         return $this->setData('payments', $payments);
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getCategory(): ?string
+    {
+        return $this->getData('category');
+    }
+
+    /**
+     * @param string $category
+     * @return $this
+     */
+    public function setCategory(string $category): self
+    {
+        return $this->setData('category', $category);
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getName(): ?string
+    {
+        return $this->getData('name');
+    }
+
+    /**
+     * @param string $name
+     * @return $this
+     */
+    public function setName(string $name): self
+    {
+        return $this->setData('name', $name);
+    }
+
+    /**
+     * @return array
+     */
+    public function getSellingMode(): array
+    {
+        return $this->getData('selling_mode') ?? [];
+    }
+
+    /**
+     * @param array $sellingMode
+     * @return $this
+     */
+    public function setSellingMode(array $sellingMode): self
+    {
+        return $this->setData('selling_mode', $sellingMode);
+    }
+
+    /**
+     * @return array
+     */
+    public function getLocation(): array
+    {
+        return $this->getData('location') ?? [];
+    }
+
+    /**
+     * @param array $location
+     * @return $this
+     */
+    public function setLocation(array $location): self
+    {
+        return $this->setData('location', $location);
+    }
+
+    /**
+     * @return array
+     */
+    public function getImages(): array
+    {
+        return $this->getData('images') ?? [];
+    }
+
+    /**
+     * @param array $images
+     * @return $this
+     */
+    public function setImages(array $images): self
+    {
+        return $this->setData('images', $images);
+    }
+
+    /**
+     * @return array
+     */
+    public function getDescription(): array
+    {
+        return $this->getData('description') ?? [];
+    }
+
+    /**
+     * @param array $description
+     * @return $this
+     */
+    public function setDescription(array $description): self
+    {
+        return $this->setData('description', $description);
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getExternalId(): ?string
+    {
+        return $this->getData('external_id');
+    }
+
+    /**
+     * @param string $externalId
+     * @return $this
+     */
+    public function setExternalId(string $externalId): self
+    {
+        return $this->setData('external_id', $externalId);
+    }
+
+    /**
+     * @return array
+     */
+    public function getAfterSalesServices(): array
+    {
+        return $this->getData('after_sales_services') ?? [];
+    }
+
+    /**
+     * @param array $afterSalesServices
+     * @return $this
+     */
+    public function setAfterSalesServices(array $afterSalesServices): self
+    {
+        return $this->setData('after_sales_services', $afterSalesServices);
+    }
+
+    /**
+     * @return array
+     */
+    public function getAttachments(): array
+    {
+        return $this->getData('attachments') ?? [];
+    }
+
+    /**
+     * @param array $attachments
+     * @return $this
+     */
+    public function setAttachments(array $attachments): self
+    {
+        return $this->setData('attachments', $attachments);
     }
 } 

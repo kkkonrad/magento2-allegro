@@ -160,7 +160,7 @@ class Client
 
         $requestId = uniqid('', true);
         $body = $content == 'body' ? $body : $this->json->serialize($body);
-        $this->logger->debug('ALLEGRO API HTTP REQUEST ' . $requestId . ': ' . $method . ' ' . $uri . $body);
+        $this->logger->debug('ALLEGRO API HTTP REQUEST ' . $requestId . ': ' . $method . ' ' . $uri . $this->json->serialize($params));
         $response = $this->getResponse($client, $method, $uri, $params);
         $this->logger->debug('ALLEGRO API HTTP RESPONSE ' . $requestId . ': ' . $response);
 

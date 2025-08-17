@@ -154,6 +154,7 @@
         <arguments>
             <argument name="resource" xsi:type="object">Macopedia\Allegro\Model\ResourceModel\ProductOffer</argument>
             <argument name="productOfferFactory" xsi:type="object">Macopedia\Allegro\Model\Api\ProductOfferFactory</argument>
+            <argument name="logger" xsi:type="object">Macopedia\Allegro\Logger\Logger</argument>
         </arguments>
     </type>
 

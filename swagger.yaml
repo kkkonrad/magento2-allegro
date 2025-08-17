@@ -48,6 +48,7 @@ tags:
   - name: Pricing
   - name: Order management
   - name: Payments
+  - name: Post Purchase Issues
   - name: Disputes
   - name: Shipment management
   - name: Customer returns
@@ -74,6 +75,7 @@ tags:
   - name: Tax Identification Number
   - name: Responsible persons
   - name: Responsible producers
+  - name: Conversions
 
 x-tagGroups:
   - name: Offer
@@ -102,6 +104,7 @@ x-tagGroups:
     tags:
       - Order management
       - Payments
+      - Post Purchase Issues
       - Disputes
       - Shipment management
       - Customer returns
@@ -125,6 +128,9 @@ x-tagGroups:
       - Fulfillment Products
       - Fulfillment Removal
       - Tax Identification Number
+  - name: Affiliate
+    tags:
+      - Conversions
   - name: Others
     tags:
       - Information about user
@@ -591,6 +597,16 @@ paths:
                                   <td>requestedName</td>
                                   <td>Requested name of implied warranty which is repeated in your configuration</td>
                               </tr>
+                              <tr>
+                                <td>NO_SAFETY_INFORMATION_OPTION_NOT_ALLOWED</td>
+                                <td>productSet.safetyInformation</td>
+                                <td>Usage of NO_SAFETY_INFORMATION option is not allowed</td>
+                              </tr>
+                              <tr>
+                                <td>PRODUCT_MARKETED_BEFORE_GPSR_OBLIGATION_OPTION_NOT_ALLOWED</td>
+                                <td>productSet.productMarketedBeforeGPSRObligation</td>
+                                <td>Usage of PRODUCT_MARKETED_BEFORE_GPSR_OBLIGATION option is not allowed</td>
+                              </tr>
                               </tbody>
                           </table>
                       - $ref: '#/components/schemas/Errors'
@@ -609,7 +625,7 @@ paths:
         - Offer management
       summary: "Edit an offer"
       description: >-
-        Use this resource to edit offer. Read more: <a href="../../tutorials/jak-zarzadzac-ofertami-7GzB2L37ase#edycja-pojedynczej-oferty" target="_blank">PL</a> / <a href="../../tutorials/how-to-process-list-of-offers-m09BKA5v8H3#editing-single-offer" target="_blank">EN</a>.
+        Use this resource to edit offer. This resource allows you to edit each field independently, so use it if you want to change only, for example, the price or the quantity in an offer. Read more: <a href="../../tutorials/jak-zarzadzac-ofertami-7GzB2L37ase#edycja-pojedynczej-oferty" target="_blank">PL</a> / <a href="../../tutorials/how-to-process-list-of-offers-m09BKA5v8H3#editing-single-offer" target="_blank">EN</a>.
         Note that requests may be limited.
       operationId: editProductOffers
       parameters:
@@ -719,6 +735,16 @@ paths:
                                 <td>MultipleProductsFoundException</td>
                                 <td>foundProductsIds</td>
                                 <td>IDs of existing products that were matched to provided product id (GTIN or MPN).</td>
+                              </tr>
+                              <tr>
+                                <td>NO_SAFETY_INFORMATION_OPTION_NOT_ALLOWED</td>
+                                <td>productSet.safetyInformation</td>
+                                <td>Usage of NO_SAFETY_INFORMATION option is not allowed</td>
+                              </tr>
+                              <tr>
+                                <td>PRODUCT_MARKETED_BEFORE_GPSR_OBLIGATION_OPTION_NOT_ALLOWED</td>
+                                <td>productSet.productMarketedBeforeGPSRObligation</td>
+                                <td>Usage of PRODUCT_MARKETED_BEFORE_GPSR_OBLIGATION option is not allowed</td>
                               </tr>
                             </tbody>
                           </table>
@@ -1858,9 +1884,6 @@ paths:
           content:
             application/vnd.allegro.public.v1+json:
               schema:
-                $ref: '#/components/schemas/UserRatingSummaryResponse'
-            application/vnd.allegro.beta.v1+json:
-              schema:
                 $ref: '#/components/schemas/UserRatingSummaryResponseV2'
         '401':
           description: Unauthorized
@@ -2013,7 +2036,7 @@ paths:
           required: true
           schema:
             type: string
-            example: "41846511"
+            example: '5df0a6d1ef437e00255572a1'
       responses:
         '200':
           description: OK
@@ -2118,7 +2141,7 @@ paths:
       tags:
         - Information about user
       summary: "Get sales quality"
-      description: "Use this resource to get current sales quality with at most 30 days history."
+      description: 'Use this resource to get current sales quality with at most 30 days history. Read more: <a href="../../tutorials/jak-zarzadzac-kontem-danymi-uzytkownika-ZM9YAKgPgi2#jakosc-sprzedazy" target="_blank">PL</a> / <a href="../../tutorials/account-and-user-data-management-jn9vBjqjnsw#sales-quality" target="_blank">EN</a>.'
       operationId: getSaleQualityUsingGET
       responses:
         '200':
@@ -3553,7 +3576,7 @@ paths:
       summary: 'Batch offer modification'
       description:
         'Use this resource to modify multiple offers at once. Read more: <a href="../../tutorials/jak-zarzadzac-ofertami-7GzB2L37ase#edycja-wielu-ofert-jednoczesnie" target="_blank">PL</a> / <a href="../../tutorials/how-to-process-list-of-offers-m09BKA5v8H3#editing-many-offers" target="_blank">EN</a>.
-        This resource is rate limited to 250 000 offer changes per hour or 9000 offer changes per minute.'
+        This resource is rate limited to 250 000 offer changes per hour or 9000 offer changes per minute - limit applies to a single user of the application.'
       operationId: modificationCommandUsingPUT
       parameters:
         - name: commandId
@@ -3686,7 +3709,7 @@ paths:
       operationId: priceModificationCommandUsingPUT
       description: >-
         Change price of offers. Read more: <a href="../../tutorials/jak-zarzadzac-ofertami-7GzB2L37ase#cena" target="_blank">PL</a> / <a href="../../tutorials/how-to-process-list-of-offers-m09BKA5v8H3#price" target="_blank">EN</a>.
-        This resource is rate limited to 150 000 offer changes per hour or 9000 offer changes per minute.
+        This resource is rate limited to 150 000 offer changes per hour or 9000 offer changes per minute - limit applies to a single user of the application.
       parameters:
         - name: commandId
           in: path
@@ -3807,7 +3830,7 @@ paths:
       summary: "Batch offer quantity modification"
       description: >-
         Change quantity of multiple offers. Read more: <a href="../../tutorials/jak-zarzadzac-ofertami-7GzB2L37ase#liczba-przedmiotow" target="_blank">PL</a> / <a href="../../tutorials/how-to-process-list-of-offers-m09BKA5v8H3#quantity" target="_blank">EN</a>.
-        This resource is rate limited to 250 000 offer changes per hour or 9000 offer changes per minute.
+        This resource is rate limited to 250 000 offer changes per hour or 9000 offer changes per minute - limit applies to a single user of the application.
       operationId: quantityModificationCommandUsingPUT
       parameters:
         - name: commandId
@@ -3929,7 +3952,7 @@ paths:
       summary: "Batch offer automatic pricing rules modification"
       description:
         'Use this resource to modify the automatic pricing rules of multiple offers at the same time. Read more: <a href="../../tutorials/jak-zarzadzac-ofertami-7GzB2L37ase#reguly-cenowe" target="_blank">PL</a> / <a href="../../tutorials/how-to-process-list-of-offers-m09BKA5v8H3#pricing-rules" target="_blank">EN</a>.
-        This resource is rate limited to 150 000 offer changes per hour or 9000 offer changes per minute.'
+        This resource is rate limited to 150 000 offer changes per hour or 9000 offer changes per minute - limit applies to a single user of the application.'
       operationId: offerAutomaticPricingModificationCommandUsingPOST
       responses:
         '201':
@@ -5116,6 +5139,12 @@ paths:
                         name:
                           type: string
                           description: User defined name of the shipping rates set.
+                        features:
+                          type: object
+                          properties:
+                            managedByAllegro:
+                              type: boolean
+                              description: Indicates whether the shipping rates set is managed by Allegro and cannot be modified via API.
                         marketplaces:
                           type: array
                           items:
@@ -5131,6 +5160,8 @@ paths:
                     shippingRates:
                       - id: 758fcd59-fbfa-4453-ae07-4800d72c2ca0
                         name: Cennik z wysyłką do Czech
+                        features:
+                          managedByAllegro: false
                         marketplaces:
                           - id: "allegro-pl"
                           - id: "allegro-cz"
@@ -5212,12 +5243,23 @@ paths:
           content:
             application/vnd.allegro.public.v1+json:
               schema:
-                $ref: "#/components/schemas/ShippingRatesSet"
+                allOf:
+                  - $ref: "#/components/schemas/ShippingRatesSet"
+                  - type: object
+                    properties:
+                      features:
+                        type: object
+                        properties:
+                          managedByAllegro:
+                            type: boolean
+                            description: Indicates whether the shipping rates set is managed by Allegro and cannot be modified via API.
               examples:
                 response:
                   value:
                     id: 758fcd59-fbfa-4453-ae07-4800d72c2ca6
                     name: Mój cennik
+                    features:
+                      managedByAllegro: false
                     rates:
                       - deliveryMethod:
                           id: 758fcd59-fbfa-4453-ae07-4800d72c2ca5
@@ -7673,7 +7715,7 @@ paths:
         You can attach pdf, jpeg or png files to your offers.
         We will present them under the offer description in the Additional information section.
 
-        You can attach up to 9 files to one offer – one per each type from the list:
+        You can attach multiple files to one offer – one per each type from the list:
           * Guide (MANUAL). Allowed media types: PDF
           * Special offer terms (SPECIAL_OFFER_RULES). Allowed media types: PDF
           * Competition terms (COMPETITION_RULES). Allowed media types: PDF
@@ -7684,6 +7726,8 @@ paths:
           * Energy label (ENERGY_LABEL). Allowed media types: JPEG, JPG, PNG
           * Product information sheet (PRODUCT_INFORMATION_SHEET). Allowed media types: PDF
           * Tire label (TIRE_LABEL). Allowed media types: JPEG, JPG, PNG
+          * Data processing sheet - software (SOFTWARE_DATA_PROCESSING). Allowed media types: PDF
+          * Data processing sheet - device (HARDWARE_DATA_PROCESSING). Allowed media types: PDF
 
         You can attach up to 20 files to one product for:
           * Safety information manual (SAFETY_INFORMATION_MANUAL). Allowed media types: PDF, JPEG, JPG, PNG
@@ -8772,14 +8816,595 @@ paths:
       security:
         - bearer-token-for-application: [ ]
         - bearer-token-for-user: [ ]
+  /sale/issues:
+    get:
+      tags:
+        - Post Purchase Issues
+      summary: "Get the user's post purchase issues"
+      description: >-
+        Use this resource to get the list of your disputes and claims ordered by descending opened date.
+        Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#lista-dyskusji-i-reklamacji-na-koncie" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#all-disputes-and-claims" target="_blank">EN</a>.
+      operationId: getListOfIssuesUsingGET
+      parameters:
+        - name: checkoutForm.id
+          in: query
+          description: Checkout form identifier.
+          required: false
+          schema:
+            type: string
+            format: uuid
+          example: "29738e61-7f6a-11e8-ac45-09db60ede9d6"
+        - name: limit
+          in: query
+          description: The maximum number of issues in a response.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          description: Index of first returned issue.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+        - name: status
+          in: query
+          description: Filter issues with given set of statuses.
+          required: false
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/PostPurchaseIssueStatus'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/vnd.allegro.beta.v1+json:
+              schema:
+                $ref: '#/components/schemas/PostPurchaseIssueListResponse'
+              examples:
+                issue-list:
+                    summary: List of issues containing a dispute and a claim
+                    value:
+                      issues:
+                        - id: 6f552f2e-9626-46b3-af09-bfdbf9690d65
+                          type: DISPUTE
+                          referenceNumber: null
+                          decisionDueDate: null
+                          openedDate: "2025-06-10T12:12:12.019Z"
+                          subject: "nie otrzymałem towaru po wpłacie"
+                          buyer:
+                            id: e781964b-ed6b-4f2b-b915-6c3f7495d6ee
+                            login: example-user
+                          checkoutForm:
+                            id: 94092826-f0e2-47ca-b8d1-94fd7cb82c33
+                            createdAt: "2025-05-10T15:10:10.019Z"
+                          currentState:
+                            status: DISPUTE_ONGOING
+                            statusDueDate: null
+                          chat:
+                            lastMessage:
+                              status: BUYER_REPLIED
+                              createdAt: "2025-06-10T14:06:11.019Z"
+                            messagesCount: 2
+                            initialMessage:
+                              id: 7cf7dba4-d232-4559-972b-edb8bd3d8883
+                              text: hello
+                              attachments:
+                                - fileName: problem.jpg
+                                  url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+                              author:
+                                login: example-user
+                                role: BUYER
+                              createdAt: "2025-06-10T12:12:12.019Z"
+                          expectations: [ ]
+                          description: "Zwrot 27 zł"
+                          offer: null
+                          product: null
+                          reason: null
+                          right: null
+                          attachments:
+                            - fileName: broken.png
+                              url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+                        - id: 73cc3981-bc7e-45b2-911a-a0156871f18f
+                          type: CLAIM
+                          referenceNumber: "1/2025"
+                          decisionDueDate: "2025-06-25T12:12:12.019Z"
+                          openedDate: "2025-06-10T12:12:12.019Z"
+                          subject: null
+                          buyer:
+                            id: "93975873"
+                            login: example-user
+                          checkoutForm:
+                            id: fb6f7b9a-b882-4edf-b994-9dffa6c38530
+                            createdAt: "2025-05-10T15:10:10.019Z"
+                          currentState:
+                            status: CLAIM_SUBMITTED
+                            statusDueDate: "2025-06-24T12:12:12.019Z"
+                          chat:
+                            lastMessage:
+                              status: BUYER_REPLIED
+                              createdAt: "2025-06-10T14:06:11.019Z"
+                            messagesCount: 2
+                            initialMessage:
+                              id: 63707fb6-1a81-47a5-8d65-b9c6cbdb9ee0
+                              text: hello
+                              attachments:
+                                - fileName: problem.jpg
+                                  url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+                              author:
+                                login: example-user
+                                role: BUYER
+                              createdAt: "2025-06-10T12:12:12.019Z"
+                          expectations:
+                            - name: "PARTIAL_REFUND"
+                              refund:
+                                amount: "50.00"
+                                currency: "PLN"
+                          offer:
+                            id: "7778622952"
+                            quantity: 1
+                          product:
+                            id: b436087c-077f-4dd1-a6b5-ff9f63db59b7
+                          description: null
+                          reason:
+                            description: "Free text"
+                            type: "RECEIVED_ITEMS_NOT_MATCHING_DESCRIPTION"
+                          right: "COMPLAINT"
+                          attachments:
+                            - fileName: broken.png
+                              url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+        '401':
+          description: Unauthorized
+        '404':
+          description: Not Found
+        '422':
+          description: Unprocessable Entity
+      security:
+      - bearer-token-for-user:
+        - allegro:api:disputes
+  /sale/issues/{issueId}:
+    get:
+      tags:
+        - Post Purchase Issues
+      summary: "Get a single dispute or claim"
+      description: >-
+        Use this resource to get a single dispute or claim. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#szczegolowe-informacje-o-dyskusji-reklamacji" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#detailed-information-about-the-dispute-claim" target="_blank">EN</a>.
+      operationId: getIssueUsingGET
+      parameters:
+        - name: issueId
+          in: path
+          description: Dispute or claim identifier.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            application/vnd.allegro.beta.v1+json:
+              schema:
+                $ref: '#/components/schemas/PostPurchaseIssue'
+              examples:
+                dispute:
+                  summary: Issue representing a dispute
+                  value:
+                    id: 6f552f2e-9626-46b3-af09-bfdbf9690d65
+                    type: DISPUTE
+                    referenceNumber: null
+                    decisionDueDate: null
+                    openedDate: "2025-06-10T12:12:12.019Z"
+                    subject: "nie otrzymałem towaru po wpłacie"
+                    buyer:
+                      id: e781964b-ed6b-4f2b-b915-6c3f7495d6ee
+                      login: example-user
+                    checkoutForm:
+                      id: 94092826-f0e2-47ca-b8d1-94fd7cb82c33
+                      createdAt: "2025-05-10T15:10:10.019Z"
+                    currentState:
+                      status: DISPUTE_ONGOING
+                      statusDueDate: null
+                    chat:
+                      lastMessage:
+                        status: BUYER_REPLIED
+                        createdAt: "2025-06-10T14:06:11.019Z"
+                      messagesCount: 2
+                      initialMessage:
+                        id: 7cf7dba4-d232-4559-972b-edb8bd3d8883
+                        text: hello
+                        attachments:
+                          - fileName: problem.jpg
+                            url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+                        author:
+                          login: example-user
+                          role: BUYER
+                        createdAt: "2025-06-10T12:12:12.019Z"
+                    expectations: []
+                    description: "Zwrot 27 zł"
+                    offer: null
+                    product: null
+                    reason: null
+                    right: null
+                    attachments:
+                      - fileName: broken.png
+                        url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+                claim:
+                  summary: Issue representing a claim
+                  value:
+                    id: 73cc3981-bc7e-45b2-911a-a0156871f18f
+                    type: CLAIM
+                    referenceNumber: "1/2025"
+                    decisionDueDate: "2025-06-25T12:12:12.019Z"
+                    openedDate: "2025-06-10T12:12:12.019Z"
+                    subject: null
+                    buyer:
+                      id: "93975873"
+                      login: example-user
+                    checkoutForm:
+                      id: fb6f7b9a-b882-4edf-b994-9dffa6c38530
+                      createdAt: "2025-05-10T15:10:10.019Z"
+                    currentState:
+                      status: CLAIM_SUBMITTED
+                      statusDueDate: "2025-06-24T12:12:12.019Z"
+                    chat:
+                      lastMessage:
+                        status: BUYER_REPLIED
+                        createdAt: "2025-06-10T14:06:11.019Z"
+                      messagesCount: 2
+                      initialMessage:
+                        id: 63707fb6-1a81-47a5-8d65-b9c6cbdb9ee0
+                        text: hello
+                        attachments:
+                          - fileName: problem.jpg
+                            url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+                        author:
+                          login: example-user
+                          role: BUYER
+                        createdAt: "2025-06-10T12:12:12.019Z"
+                    expectations:
+                      - name: "PARTIAL_REFUND"
+                        refund:
+                          amount: "50.00"
+                          currency: "PLN"
+                    offer:
+                      id: "7778622952"
+                      quantity: 1
+                    product:
+                      id: b436087c-077f-4dd1-a6b5-ff9f63db59b7
+                    description: null
+                    reason:
+                      description: "Free text"
+                      type: "RECEIVED_ITEMS_NOT_MATCHING_DESCRIPTION"
+                    right: "COMPLAINT"
+                    attachments:
+                      - fileName: broken.png
+                        url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+      security:
+      - bearer-token-for-user:
+        - allegro:api:disputes
+  /sale/issues/{issueId}/chat:
+    get:
+      tags:
+        - Post Purchase Issues
+      summary: "Get the messages and state claim changes within a post purchase issue"
+      description: >-
+        Use this resource to get the list of messages and state changes within a dispute or claim. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#wiadomosci-z-dyskusji-i-reklamacji" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#disputes-and-claims-messages" target="_blank">EN</a>.
+      operationId: getChatFromIssueUsingGET
+      parameters:
+        - name: issueId
+          in: path
+          description: Dispute or claim identifier.
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: limit
+          in: query
+          description: The maximum number of messages within issue returned in a response.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          description: Index of first returned message within issue.
+          required: false
+          schema:
+            type: integer
+            format: int32
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: OK
+          content:
+            application/vnd.allegro.beta.v1+json:
+              schema:
+                $ref: '#/components/schemas/PostPurchaseIssueChatResponse'
+              examples:
+                chat:
+                  summary: Represents a chat conversation in a post purchase issue
+                  value:
+                    chat:
+                      - id: "92162836-6599-4b6f-a71e-b27392770b53"
+                        text: "Proszę o wyjaśnienie problemu."
+                        attachments:
+                          - fileName: "problem.jpg"
+                            url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+                        author:
+                          login: "example-user"
+                          role: "BUYER"
+                        createdAt: "2025-06-10T12:12:12.019Z"
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+      security:
+      - bearer-token-for-user:
+        - allegro:api:disputes
+  /sale/issues/{issueId}/message:
+    post:
+      tags:
+        - Post Purchase Issues
+      summary: Add a message to an issue
+      parameters:
+        - name: issueId
+          in: path
+          description: Dispute or claim identifier.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      description: >-
+        Use this resource to post a message in certain issue. At least one of fields: 'text', 'attachment' has to
+        be present. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#nowa-wiadomosc-w-dyskusji-lub-reklamacji" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#new-message-in-dispute-or-claim" target="_blank">EN</a>.
+      operationId: addMessageToIssueUsingPOST
+      responses:
+        '201':
+          description: Created
+          content:
+            application/vnd.allegro.beta.v1+json:
+              schema:
+                $ref: '#/components/schemas/PostPurchaseIssueMessage'
+              examples:
+                message:
+                  summary: Regular message
+                  value:
+                    id: "a9927fcc-f11a-436a-9f8d-177fd37d393c"
+                    text: "Dzień dobry. Proszę o doprecyzowanie problemu."
+                    attachments:
+                      - fileName: "example-image.jpg"
+                        url: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+                    author:
+                      login: "example-seller"
+                      role: "SELLER"
+                    createdAt: "2025-06-10T12:12:12.019Z"
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+        '409':
+          description: Dispute is in a state that forbids adding new messages
+        '422':
+          description: Unprocessable Entity
+      requestBody:
+        $ref: '#/components/requestBodies/PostPurchaseIssueMessageRequest'
+      security:
+      - bearer-token-for-user:
+        - allegro:api:disputes
+  /sale/issues/{issueId}/status:
+    post:
+      tags:
+        - Post Purchase Issues
+      summary: "Change status of a claim"
+      description: 'Change the formal status of a claim, for example accept or reject it. Not a valid operation for disputes.
+      Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#zmien-status-reklamacji" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#change-claim-status" target="_blank">EN</a>.'
+      parameters:
+        - name: issueId
+          in: path
+          description: Dispute or claim identifier.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      operationId: changeStatusOfIssueUsingPOST
+      responses:
+        '200':
+          description: Status changed correctly
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+      requestBody:
+        $ref: '#/components/requestBodies/ClaimStatusChangeRequest'
+      security:
+        - bearer-token-for-user:
+            - allegro:api:disputes
+  /sale/issues/attachments:
+    post:
+      tags:
+        - Post Purchase Issues
+      summary: "Create an attachment declaration"
+      description: >-
+        Use this resource to post an attachment declaration. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#deklaracja-zalacznika" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#attachment-declaration" target="_blank">EN</a>.
+      operationId: createAnIssueAttachmentUsingPOST
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: Use this URL to perform PUT request with binary data file coherent with the attachment declaration.
+          content:
+            application/vnd.allegro.beta.v1+json:
+              schema:
+                $ref: '#/components/schemas/DisputeAttachmentId'
+              examples:
+                attachment:
+                 summary: "Declaration of an attachment"
+                 value:
+                   id: "0c3c607d-d1de-4c6e-8db7-48c5b88a795d"
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '422':
+          description: Unprocessable Entity
+      requestBody:
+        $ref: '#/components/requestBodies/PostPurchaseIssueAttachmentDeclaration'
+      security:
+      - bearer-token-for-user:
+        - allegro:api:disputes
+  /sale/issues/attachments/{attachmentId}:
+    put:
+      tags:
+        - Post Purchase Issues
+      summary: "Upload an attachment"
+      description: >-
+        Upload a post purchase issue message attachment.
+
+        This operation should be used after creating an attachment declaration with *POST /sale/issues/attachments*
+
+        **Important!** You can find the URL address to upload the file to our server in the *Location* response header of *POST /sale/issues/attachments*.
+        The URL is unique and one-time. As its format may change in time, you should always use the address from the header.
+        Do not compose the address on your own. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#dodanie-zalacznika" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#adding-an-attachment" target="_blank">EN</a>.
+
+      operationId: uploadIssueAttachmentUsingPUT
+      parameters:
+        - name: attachmentId
+          in: path
+          required: true
+          description: Attachment identifier.
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: File uploaded correctly
+          content:
+            application/vnd.allegro.beta.v1+json:
+              schema:
+                $ref: '#/components/schemas/DisputeAttachmentId'
+              examples:
+                attachment:
+                 summary: "Uploaded attachment"
+                 value:
+                   id: "0c3c607d-d1de-4c6e-8db7-48c5b88a795d"
+        '400':
+          description: Syntactically incorrect request
+        '401':
+          description: Invalid or missing bearer token
+        '413':
+          description: File is too big
+        '415':
+          description: Unsupported media type
+        '422':
+          description: Unprocessable Entity
+      requestBody:
+        required: true
+        content:
+          image/png:
+            schema:
+              type: string
+              format: binary
+              description: File in a binary format
+          image/gif:
+            schema:
+              type: string
+              format: binary
+              description: File in a binary format
+          image/bmp:
+            schema:
+              type: string
+              format: binary
+              description: File in a binary format
+          image/tiff:
+            schema:
+              type: string
+              format: binary
+              description: File in a binary format
+          image/jpeg:
+            schema:
+              type: string
+              format: binary
+              description: File in a binary format
+          application/pdf:
+            schema:
+              type: string
+              format: binary
+              description: File in a binary format
+      security:
+      - bearer-token-for-user:
+        - allegro:api:disputes
+    get:
+      tags:
+        - Post Purchase Issues
+      summary: "Get an attachment"
+      description: >-
+        Use this resource to get an attachment. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#pobranie-zalacznika" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#attachment-related-to-dispute-claim" target="_blank">EN</a>.
+      operationId: getIssueAttachmentUsingGET
+      parameters:
+        - name: attachmentId
+          in: path
+          description: Attachment identifier.
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '404':
+          description: Not Found
+      security:
+      - bearer-token-for-user:
+        - allegro:api:disputes
   /sale/disputes:
     get:
       tags:
         - Disputes
-      summary: "Get the user's disputes"
+      summary: "Get the user's disputes. Use the Post Purchase Issues API instead"
       description: >-
         Use this resource to get the list of your disputes ordered by descending opened date.
         Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#dyskusje-na-koncie" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#all-discussions" target="_blank">EN</a>.
+      deprecated: true
       operationId: getListOfDisputesUsingGET
       parameters:
         - name: checkoutForm.id
@@ -8841,9 +9466,10 @@ paths:
     get:
       tags:
         - Disputes
-      summary: "Get a single dispute"
+      summary: "Get a single dispute. Use the Post Purchase Issues API instead"
       description: >-
         Use this resource to get a single dispute. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#szczegolowe-informacje-o-dyskusji" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#information-about-a-particular-discussion" target="_blank">EN</a>.
+      deprecated: true
       operationId: getDisputeUsingGET
       parameters:
         - name: disputeId
@@ -8873,9 +9499,10 @@ paths:
     get:
       tags:
         - Disputes
-      summary: "Get the messages within a dispute"
+      summary: "Get the messages within a dispute. Use the Post Purchase Issues API instead"
       description: >-
         Use this resource to get the list of messages within dispute. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#wiadomosci-z-dyskusji" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#all-messages-within-a-discussion" target="_blank">EN</a>.
+      deprecated: true
       operationId: getMessagesFromDisputeUsingGET
       parameters:
         - name: disputeId
@@ -8936,6 +9563,7 @@ paths:
         Use this resource to post a message in certain dispute. At least one of fields: 'text', 'attachment' has to
         be present. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#nowa-wiadomosc-w-dyskusji" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#add-a-new-message-in-the-discussion" target="_blank">EN</a>.
       operationId: addMessageToDisputeUsingPOST
+      deprecated: true
       responses:
         '201':
           description: CREATED
@@ -8964,9 +9592,10 @@ paths:
     post:
       tags:
         - Disputes
-      summary: "Create an attachment declaration"
+      summary: "Create an attachment declaration. Use the Post Purchase Issues API instead"
       description: >-
         Use this resource to post an attachment declaration. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#deklaracja-zalacznika" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#attachment-declaration" target="_blank">EN</a>.
+      deprecated: true
       operationId: createAnAttachmentUsingPOST
       responses:
         '201':
@@ -8995,7 +9624,7 @@ paths:
     put:
       tags:
         - Disputes
-      summary: "Upload a dispute message attachment"
+      summary: "Upload a dispute message attachment. Use the Post Purchase Issues API instead"
       description: >-
         Upload a dispute message attachment.
 
@@ -9004,7 +9633,7 @@ paths:
         **Important!** You can find the URL address to upload the file to our server in the *Location* response header of *POST /sale/dispute-attachments*.
         The URL is unique and one-time. As its format may change in time, you should always use the address from the header.
         Do not compose the address on your own. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#dodanie-zalacznika" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#adding-an-attachment" target="_blank">EN</a>.
-
+      deprecated: true
       operationId: uploadDisputeAttachmentUsingPUT
       parameters:
         - name: attachmentId
@@ -9078,6 +9707,7 @@ paths:
       description: >-
         Use this resource to get an attachment. Read more: <a href="../../tutorials/jak-zarzadzac-dyskusjami-E7Zj6gK7ysE#pobranie-zalacznika" target="_blank">PL</a> / <a href="../../tutorials/how-to-manage-discussions-VL6Yr40e5t5#attachment-related-to-the-discussion" target="_blank">EN</a>.
       operationId: getAttachmentUsingGET
+      deprecated: true
       parameters:
         - name: attachmentId
           in: path
@@ -12167,6 +12797,13 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: order.id
+          in: query
+          description: ID of the order.
+          required: false
+          schema:
+            type: string
+            format: uuid
         - name: occurredAt.gte
           in: query
           description: Minimum date and time when the refund occurred provided in ISO 8601 format.
@@ -13365,6 +14002,81 @@ paths:
       security:
         - bearer-token-for-user:
             - allegro:api:shipments:write
+  /shipment-management/pickups/{pickupId}:
+    get:
+      tags:
+        - Shipment management
+      summary: Get pickup details
+      description: 'Use this resource to get pickup details.'
+      operationId: getPickupDetails
+      parameters:
+        - name: pickupId
+          in: path
+          required: true
+          description: Pickup ID.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+          content:
+            application/vnd.allegro.public.v1+json:
+              schema:
+                $ref: >-
+                  #/components/schemas/PickupDto
+        '400':
+          description: Bad Request
+          content:
+            application/vnd.allegro.public.v1+json:
+              schema:
+                properties:
+                  errors:
+                    type: array
+                    description: Array of errors.
+                    items:
+                      $ref: '#/components/schemas/Error400'
+        '401':
+          description: Unauthorized
+          content:
+            application/vnd.allegro.public.v1+json:
+              schema:
+                $ref: '#/components/schemas/AuthError'
+        '403':
+          description: Forbidden
+          content:
+            application/vnd.allegro.public.v1+json:
+              schema:
+                properties:
+                  errors:
+                    type: array
+                    description: Array of errors.
+                    items:
+                      $ref: '#/components/schemas/Error403'
+        '404':
+          description: Not Found
+          content:
+            application/vnd.allegro.public.v1+json:
+              schema:
+                properties:
+                  errors:
+                    type: array
+                    description: Array of errors.
+                    items:
+                      $ref: '#/components/schemas/Error404'
+        '504':
+          description: Gateway Timeout
+          content:
+            application/vnd.allegro.public.v1+json:
+              schema:
+                properties:
+                  errors:
+                    type: array
+                    description: Array of errors.
+                    items:
+                      $ref: '#/components/schemas/Error504'
+      security:
+        - bearer-token-for-user:
+            - allegro:api:shipments:read
   /sale/matching-categories:
     get:
       tags:
@@ -15553,11 +16265,7 @@ paths:
       summary: 'Update submitted Advance Ship Notice'
       description: >-
         Use this resource to update already submitted Advance Ship Notice. Update is allowed only when Advance Ship Notice is in "IN_TRANSIT" status.
-        Modifications are limited to:
-          - changing items quantity
-          - removing items
-          - changing handling unit amount
-          - changing shipping courier id, name, tracking numbers or vehicle licence plate or third party delivery details (depending on the selected shipping method in the submitted advance ship notice)
+        The only modification that is currently blocked is adding new product to submitted asn.
         Handling unit's amount property update clears labels property. Use Create labels command to create new labels for provided content. Read more: <a href="../../tutorials/one-fulfillment-by-allegro-0ADwgOLqWSw#edytuj-zakonczone-awizo" target="_blank">PL</a> / <a href="../../tutorials/one-fulfillment-by-allegro-4R9dXyMPlc9#edit-advance-ship-notice" target="_blank">EN</a>.
       operationId: updateSubmittedAdvanceShipNotice
       parameters:
@@ -15989,6 +16697,99 @@ paths:
       security:
         - bearer-token-for-user:
             - allegro:api:fulfillment:read
+  /affiliate/conversions/cps:
+    get:
+      summary: '[BETA] List CPS conversions'
+      description: >-
+        Use this resource to find your CPS (Cost Per Sale) conversions for specific filters.
+        The response contains a list of CPS conversions that correspond with the specified parameters.
+        Read more: <a href="../../tutorials/afiliacja-0A1bPnwVwUq#jak-pobrac-informacje-o-konwersji-cps" target="_blank">PL</a> / <a href="../../tutorials/affiliation-8do60yLKPIq#how-to-retrieve-cps-conversion-information" target="_blank">EN</a>.
+      parameters:
+        - name: orderCreatedAt.gte
+          in: query
+          description: The minimum date and time of order creation in ISO 8601 format.
+          required: false
+          schema:
+            type: string
+        - name: orderCreatedAt.lte
+          in: query
+          description: The maximum date and time of order creation in ISO 8601 format.
+          required: false
+          schema:
+            type: string
+        - name: lastModifiedAt.gte
+          in: query
+          description: The minimum date and time of the latest conversion modification in ISO 8601 format.
+          required: false
+          schema:
+            type: string
+        - name: lastModifiedAt.lte
+          in: query
+          description: The maximum date and time of the latest conversion modification in ISO 8601 format.
+          required: false
+          schema:
+            type: string
+        - name: status
+          in: query
+          description: >-
+            Conversion status.
+            The allowed values are:
+              * CREATED
+              * REJECTED
+              * CONFIRMED.
+          required: false
+          schema:
+            type: string
+        - name: offset
+          in: query
+          description: The offset of elements in the response.
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          description: Maximum number of elements in response.
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 10000
+            default: 1000
+        - name: includePublisherUrlParameters
+          in: query
+          description: Comma-separated keys of the ‘publisherUrlParameters’ map which will be included in the response. By default the map is empty.
+          required: false
+          schema:
+            type: object
+            additionalProperties:
+              type: string
+      operationId: getCpsConversions
+      security:
+        - bearer-token-for-user:
+            - allegro:api:affiliate:read
+      tags:
+        - Conversions
+      responses:
+        '200':
+          description: Returns the list of CPS conversions associated with a logged-in user and matched with query parameters.
+          content:
+            application/vnd.allegro.beta.v1+json:
+              schema:
+                $ref: '#/components/schemas/CpsConversionResponse'
+        '400':
+          description: Bad Request
+        '401':
+          description: Unauthorized
+        '403':
+          description: Forbidden
+        '422':
+          description: Invalid request parameters.
+          content:
+            application/vnd.allegro.beta.v1+json:
+              schema:
+                $ref: '#/components/schemas/ErrorsHolder'
 
 
   /fulfillment/removal/preferences:
@@ -16159,6 +16960,27 @@ components:
     AttachmentDeclaration:
       content:
         application/vnd.allegro.public.v1+json:
+          schema:
+            $ref: '#/components/schemas/AttachmentDeclaration'
+      description: A detailed declaration of a file to be uploaded
+      required: true
+    PostPurchaseIssueMessageRequest:
+      content:
+        application/vnd.allegro.beta.v1+json:
+          schema:
+            $ref: '#/components/schemas/MessageRequest'
+      description: Message request
+      required: true
+    ClaimStatusChangeRequest:
+      content:
+        application/vnd.allegro.beta.v1+json:
+          schema:
+            $ref: '#/components/schemas/ClaimStatusChangeRequest'
+      description: Claim status change
+      required: true
+    PostPurchaseIssueAttachmentDeclaration:
+      content:
+        application/vnd.allegro.beta.v1+json:
           schema:
             $ref: '#/components/schemas/AttachmentDeclaration'
       description: A detailed declaration of a file to be uploaded
@@ -16341,6 +17163,12 @@ components:
       properties:
         payment:
           $ref: '#/components/schemas/RefundPayment'
+        order:
+          $ref: '#/components/schemas/RefundOrder'
+        commandId:
+          type: string
+          example: 14e142cf-e8e0-48cc-bcf6-399b5fd90b32
+          description: Command UUID. If empty, idempotency will not be supported.
         reason:
           type: string
           description: Reason for a payment refund.
@@ -16524,6 +17352,8 @@ components:
           example: 09f0b4cc-7880-11e9-8f9e-2a86e4085a59
         payment:
           $ref: '#/components/schemas/RefundPayment'
+        order:
+          $ref: '#/components/schemas/RefundOrder'
         reason:
           type: string
           description: Reason for a payment refund.
@@ -16634,6 +17464,16 @@ components:
             format: uuid
             description: The payment identifier.
             example: a6bee8b2-8b4e-11e9-8918-07b31163120a
+    RefundOrder:
+      type: object
+      description: Order affected by refund operation.
+      title: RefundOrder
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The order identifier.
+          example: a114b176-4833-451c-84dc-c37463793417
     CustomerReturnRefundRejectionRequest:
       type: object
       required:
@@ -16960,6 +17800,9 @@ components:
             example: pl-PL
             description: IETF language tag.
             nullable: true
+        managedByAllegro:
+          type: boolean
+          description: "Information whether the group is automatically created and managed by Allegro"
     AdditionalServicesGroups:
       type: object
       properties:
@@ -18379,17 +19222,9 @@ components:
                 type: object
                 required:
                   - id
-                  - type
                 properties:
                   id:
                     $ref: '#/components/schemas/AutomaticPricingRuleId'
-                  type:
-                    allOf:
-                      - description: >-
-                          The field is deprecated and will be removed in the future.
-                          To obtain rule details use the following <a href="#operation/getAutomaticPricingRuleByIdUsingGET" target="_blank">resource</a> with rule.id from the response.
-                      - deprecated: true
-                      - $ref: '#/components/schemas/AutomaticPricingRuleType'
               configuration:
                 $ref: '#/components/schemas/AutomaticPricingOfferRuleConfiguration'
               updatedAt:
@@ -19348,8 +20183,6 @@ components:
           $ref: '#/components/schemas/ModificationResponsibleProducer'
         safetyInformation:
           $ref: '#/components/schemas/ModificationSafetyInformation'
-        marketedBeforeGPSRObligation:
-          $ref: '#/components/schemas/ModificationMarketedBeforeGPSRObligation'
       description: Contains fields to change
     ModificationDelivery:
       type: object
@@ -19464,16 +20297,6 @@ components:
         mapping:
           TEXT: '#/components/schemas/ModificationTextSafetyInformation'
           ATTACHMENTS: '#/components/schemas/ModificationAttachmentSafetyInformation'
-          NO_SAFETY_INFORMATION: '#/components/schemas/ModificationNoSafetyInformation'
-    ModificationNoSafetyInformation:
-      allOf:
-        - $ref: '#/components/schemas/ModificationSafetyInformation'
-        - type: object
-          properties:
-            type:
-              description: The option is deprecated and will be removed in the future.
-              deprecated: true
-              type: string
     ModificationAttachmentSafetyInformation:
       allOf:
         - $ref: '#/components/schemas/ModificationSafetyInformation'
@@ -19501,14 +20324,6 @@ components:
               description: >
                 Safety warnings and instructions for the product in plain text form, if the information cannot be provided through attachments.
                 Text can't be longer than 5000 characters.
-    ModificationMarketedBeforeGPSRObligation:
-      type: boolean
-      nullable: true
-      example: true
-      deprecated: true
-      description: >-
-        The field is deprecated and will be removed in the future.
-        Allows you to declare whether the first product in the offer was marketed before the GPSR obligation.
     ModificationPayments:
       type: object
       properties:
@@ -19647,6 +20462,8 @@ components:
         - PRODUCT_INFORMATION_SHEET
         - TIRE_LABEL
         - SAFETY_INFORMATION_MANUAL
+        - SOFTWARE_DATA_PROCESSING
+        - HARDWARE_DATA_PROCESSING
     AttachmentFile:
       type: object
       properties:
@@ -21056,6 +21873,41 @@ components:
             - ADMIN
           description: Message containing information who requested removing of a rating
           example: "SELLER"
+    RemovalVBeta1:
+      type: object
+      required:
+        - possibleTo
+      properties:
+        possibleTo:
+          type: string
+          example: '2025-05-17T08:36:57.292Z'
+          description: Date until a removal request can be submitted in ISO 8601 format
+        request:
+          $ref: '#/components/schemas/RemovalRequestVBeta1'
+    RemovalRequestVBeta1:
+      type: object
+      description: 'Submitted removal request, null if removal was not requested'
+      required:
+        - createdAt
+        - message
+      properties:
+        createdAt:
+          type: string
+          example: '2025-05-17T08:36:57.292Z'
+          description: Removal request creation datetime in ISO 8601 format
+        message:
+          type: string
+          description: Message containing explanation for removing rating
+        language:
+          type: string
+          description: Language of the message
+        source:
+          type: string
+          enum:
+            - SELLER
+            - ADMIN
+          description: Message containing information who requested removing of a rating
+          example: "SELLER"
     UserRatingRemovalRequest:
       type: object
       required:
@@ -21771,7 +22623,11 @@ components:
           example: false
           description: Whether buyer recommends the order
         removal:
-          $ref: '#/components/schemas/Removal'
+          $ref: '#/components/schemas/RemovalVBeta1'
+        firstNegativeReviewInLast30Days:
+          type: boolean
+          example: false
+          description: Whether the rating is the first negative in the last 30 days
     UserRatingListResponseVBeta1:
       type: object
       required:
@@ -21950,16 +22806,9 @@ components:
         user:
           type: object
           required:
-            - numberOfProductsSoldWithin30Days
             - createdAt
           description: Information about the user.
           properties:
-            numberOfProductsSoldWithin30Days:
-              type: integer
-              format: int64
-              description: Number of products sold by the user within the last 30 days.
-              minimum: 0
-              example: 120
             createdAt:
               type: string
               format: date
@@ -22851,13 +23700,6 @@ components:
           properties:
             id:
               $ref: '#/components/schemas/AutomaticPricingRuleId'
-            type:
-              allOf:
-                - description: >-
-                    The field is deprecated and will be removed in the future.
-                    To obtain rule details use the following <a href="#operation/getAutomaticPricingRuleByIdUsingGET" target="_blank">resource</a> with rule.id from the response.
-                - deprecated: true
-                - $ref: '#/components/schemas/AutomaticPricingRuleType'
 
     SellingModeFormat:
       type: string
@@ -22872,7 +23714,7 @@ components:
       properties:
         percentage:
           type: string
-          description: The buy now tax rate, Format 0.00. The tax is linked to the default country that corresponds to the base marketplace of this offer.
+          description: The buy now tax rate, Format 0.00. The tax is linked to the PL countryCode even if base marketplace is different.
           example: '23.00'
     OfferTaxSettings:
       type: object
@@ -23057,8 +23899,7 @@ components:
             },
             'priceAutomation': {
               'rule': {
-                'id': '641c73feaef0a8281a3d11f8',
-                'type': 'FOLLOW_BY_ALLEGRO_MIN_PRICE'
+                'id': '641c73feaef0a8281a3d11f8'
               }
             }
           },
@@ -24381,6 +25222,7 @@ components:
       properties:
         id:
           type: string
+          example: "eeed0007-4404-4176-a1eb-11d26f056c0d"
       required:
         - id
     AttachmentDeclaration:
@@ -24388,10 +25230,11 @@ components:
       properties:
         fileName:
           type: string
+          example: "example-file.jpg"
         size:
           type: integer
           minimum: 1
-          example: 128
+          example: 216772
       required:
         - fileName
         - size
@@ -24439,17 +25282,51 @@ components:
         text:
           type: string
           maxLength: 20000
-        attachment:
-          $ref: '#/components/schemas/DisputeAttachmentId'
+          example: "Dzień dobry. Proszę o doprecyzowanie problemu."
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/DisputeAttachmentId'
         type:
           type: string
           enum:
             - REGULAR
             - END_REQUEST
+            - RETURN_REQUIRED_SELLER_LABEL
+            - RETURN_REQUIRED_CUSTOM
+            - RETURN_NOT_REQUIRED
+          example: "REGULAR"
+          description: Type of message, `END_REQUEST` is only allowed for disputes while return-related types are only allowed for claims.
       required:
         - text
         - attachment
         - type
+    ClaimStatusChangeRequest:
+      type: object
+      description: "Request to change status of a claim"
+      properties:
+        status:
+          type: string
+          enum:
+            - ACCEPTED_REPAIR
+            - ACCEPTED_REFUND
+            - ACCEPTED_EXCHANGE
+            - ACCEPTED_PARTIAL_REFUND
+            - REJECTED_ADDITIONAL_REQUIREMENTS_NOT_COMPLETED
+            - REJECTED_PRODUCT_NOT_RETURNED
+            - REJECTED_PRODUCT_DAMAGED_BY_USER
+            - REJECTED_PRODUCT_CONFORMS_TO_CONTRACT
+            - REJECTED_MINOR_DEFECT
+            - REJECTED_OTHER
+          example: ACCEPTED_PARTIAL_REFUND
+        message:
+          type: string
+          example: Akceptuję częściowy zwrot pieniędzy
+        partialRefund:
+          $ref: '#/components/schemas/Price'
+      required:
+        - status
+        - message
     TagRequest:
       type: object
       required:
@@ -24823,6 +25700,7 @@ components:
             - ACCEPTED
             - REJECTED
           description: Verification resolution type.
+          example: 'ACCEPTED'
       description: Image proposal.
     ProductNameProposal:
       type: object
@@ -24830,18 +25708,22 @@ components:
         current:
           type: string
           description: Current product name.
+          example: 'Samsung S25'
         proposal:
           type: string
           description: Proposed product name.
+          example: 'Samsung S25 Ultra'
         reason:
           type: string
           description: Verification message.
+          example: 'It is Ultra version'
         resolutionType:
           enum:
             - UNRESOLVED
             - ACCEPTED
             - REJECTED
           description: Verification resolution type.
+          example: 'ACCEPTED'
       description: Name proposal status.
     ProductCategoryProposal:
       type: object
@@ -24849,18 +25731,22 @@ components:
         current:
           type: string
           description: Current product category identifier.
+          example: '1234'
         proposal:
           type: string
           description: Proposed product category identifier.
+          example: '3214'
         reason:
           type: string
           description: Verification message.
+          example: 'It is different producer'
         resolutionType:
           enum:
             - UNRESOLVED
             - ACCEPTED
             - REJECTED
           description: Verification resolution type.
+          example: 'ACCEPTED'
       description: Name proposal status.
     ProductParameterProposal:
       type: object
@@ -24868,6 +25754,7 @@ components:
         id:
           type: string
           description: Parameter identifier.
+          example: '20334'
         values:
           type: array
           items:
@@ -24880,18 +25767,22 @@ components:
         current:
           type: string
           description: Current product parameter value.
+          example: '20334_1'
         proposal:
           type: string
           description: Proposed product parameter value.
+          example: '20334_2'
         reason:
           type: string
           description: Verification message.
+          example: 'Wrong manufacturer'
         resolutionType:
           enum:
             - UNRESOLVED
             - ACCEPTED
             - REJECTED
           description: Verification resolution type.
+          example: 'ACCEPTED'
       description: Parameter value proposal status.
     ProductChangeProposalRequest:
       type: object
@@ -24905,12 +25796,12 @@ components:
         name:
           type: string
           description: Proposed product name.
-          example: iPhone 5s
+          example: 'iPhone 5s'
           maxLength: 150
         note:
           type: string
           description: Note about product changes proposal.
-          example: Some additional note to product changes proposal.
+          example: 'Some additional note to product changes proposal.'
           maxLength: 500
         category:
           $ref: '#/components/schemas/ProductCategory'
@@ -24927,11 +25818,13 @@ components:
         notifyViaEmailAfterVerification:
             type: boolean
             description: Receive an email notification after product changes proposal resolution.
+            example: true
         language:
           type: string
           description: Language of provided proposal data.
           format: BCP-47 language code
           default: 'pl-PL'
+          example: 'en-US'
     ProductChangesResponse:
         type: object
         properties:
@@ -24960,9 +25853,11 @@ components:
             id:
                 type: string
                 description: Parameter id.
+                example: '123567'
             updatedAt:
                 type: string
                 description: Time of last parameter change in ISO 8601 format.
+                example: '2024-12-10T10:12:32.321Z'
     SaleProductDto:
       type: object
       required:
@@ -24972,12 +25867,12 @@ components:
       properties:
         id:
           type: string
-          example: c9e39cae-9cb6-11e9-a2a3-2a2ae2dbcce4
+          example: 'c9e39cae-9cb6-11e9-a2a3-2a2ae2dbcce4'
           description: Product id.
         name:
           type: string
           description: Product name.
-          example: iPhone 5s
+          example: 'iPhone 5s'
         category:
           $ref: '#/components/schemas/ProductCategoryWithPath'
         images:
@@ -25021,6 +25916,7 @@ components:
                 The publication status of the product:
                  - `PROPOSED` - product is proposed and can be during the review process
                  - `LISTED` - product is created and reviewed
+              example: 'PROPOSED'
         productSafety:
           $ref: '#/components/schemas/ProductSafetyDto'
     ProductProposalsResponse:
@@ -25028,12 +25924,12 @@ components:
       properties:
         id:
           type: string
-          example: c9e39cae-9cb6-11e9-a2a3-2a2ae2dbcce4
+          example: 'c9e39cae-9cb6-11e9-a2a3-2a2ae2dbcce4'
           description: Product id.
         name:
           type: string
           description: Product name.
-          example: iPhone 5s
+          example: 'iPhone 5s'
         category:
           allOf:
             - $ref: '#/components/schemas/ProductCategory'
@@ -25063,6 +25959,7 @@ components:
         offerId:
           type: string
           description: Offer id.
+          example: '123125423565'
         language:
           type: string
           description: Language of product data (name, description, parameters's values).
@@ -25079,7 +25976,7 @@ components:
               description: >-
                 The publication status of the submitted product:
                  - `PROPOSED` - a new product proposal was created and can be reviewed
-
+              example: 'LISTED'
     BaseSaleProductResponseDto:
       type: object
       required:
@@ -25129,6 +26026,7 @@ components:
                 The publication status of the product:
                  - `PROPOSED` - product is proposed and can be during the review process
                  - `LISTED` - product is created and reviewed
+              example: 'LISTED'
     ProductSafetyDto:
       type: object
       nullable: true
@@ -25146,7 +26044,7 @@ components:
         marketedBeforeGPSRObligation:
           nullable: true
           type: boolean
-          example: true
+          example: false
     ProductCategoryWithPath:
       type: object
       description: 'Category in which the product can be listed for sale'
@@ -25214,23 +26112,28 @@ components:
         id:
           type: string
           description: Category id.
+          example: '123456'
         name:
           type: string
           description: Category name.
+          example: 'Smartphones'
         count:
           type: integer
           description: Total number of products matching query criteria in this category.
           format: int32
           minimum: 0
+          example: 3
     ProductsCategoryPath:
       type: object
       properties:
         id:
           type: string
           description: Category id.
+          example: '123456'
         name:
           type: string
           description: Category name.
+          example: 'Smartphones'
     ProductParameter:
       type: object
       required:
@@ -25271,16 +26174,19 @@ components:
       properties:
         id:
           type: string
+          example: '123456'
         rangeValue:
           $ref: '#/components/schemas/ParameterRangeValue'
         values:
           type: array
+          example: '["4234"]'
           items:
             type: string
         valuesIds:
           type: array
           items:
             type: string
+          example: '["129970_850936"]'
     ProductParameterDto:
       type: object
       required:
@@ -25288,22 +26194,27 @@ components:
       properties:
         id:
           type: string
+          example: '123456'
         name:
           type: string
+          example: 'Brand'
         rangeValue:
           $ref: '#/components/schemas/ParameterRangeValue'
         values:
           type: array
           items:
             type: string
+          example: '["4234"]'
         valuesIds:
           type: array
           items:
             type: string
+          example: '["129970_850936"]'
         valuesLabels:
           type: array
           items:
             type: string
+          example: '["No information"]'
         unit:
           type: string
         options:
@@ -25313,10 +26224,13 @@ components:
           properties:
             identifiesProduct:
               type: boolean
+              example: true
             isGTIN:
               type: boolean
+              example: true
             isTrusted:
               type: boolean
+              example: false
               description: Parameter values originate directly from the manufacturer, its representative, or a trusted source.
       description: Product's parameter
     AiCoCreatedContent:
@@ -25328,6 +26242,7 @@ components:
           type: array
           items:
             type: string
+          example: '["images", "description"]'
       description: Each path will point to a specific field in object which is co-created by AI.
     TrustedContent:
       type: object
@@ -25338,6 +26253,7 @@ components:
           type: array
           items:
             type: string
+          example: '["images", "description"]'
       description: Each path will point to a specific field in the product object, indicating that given product part data originates directly from the manufacturer, its representative, or a trusted source.
     SaleProductOffer:
       type: object
@@ -25350,7 +26266,7 @@ components:
              /
             <a href="../../tutorials/list-offer-assigned-product-one-request-D7Kj9M71Bu6#offer-title" target="_blank">EN</a>
             .
-          example: "Test offer name"
+          example: 'Test offer name'
           maxLength: 75
         payments:
           $ref: '#/components/schemas/Payments'
@@ -25874,19 +26790,9 @@ components:
         mapping:
           TEXT: '#/components/schemas/ProductSetElementTextSafetyInformation'
           ATTACHMENTS: '#/components/schemas/ProductSetElementAttachmentSafetyInformation'
-          NO_SAFETY_INFORMATION: '#/components/schemas/ProductSetElementNoSafetyInformation'
       description: >-
         Contains information about product's safety.
         Reference <a href="https://developer.allegro.pl/documentation#operation/createOfferAttachmentUsingPOST">Docs</a>
-    ProductSetElementNoSafetyInformation:
-      allOf:
-        - $ref: '#/components/schemas/ProductSetElementSafetyInformation'
-        - type: object
-          properties:
-            type:
-              description: The option is deprecated and will be removed in the future.
-              deprecated: true
-              type: string
     ProductSetElementAttachmentSafetyInformation:
       allOf:
         - $ref: '#/components/schemas/ProductSetElementSafetyInformation'
@@ -25920,8 +26826,10 @@ components:
         marketedBeforeGPSRObligation:
           type: boolean
           nullable: true
-          example: true
-          description: Allows you to declare that the product was introduced before 13 Dec 2024 and therefore does not require GPSR data.
+          example: false
+          description: >-
+            Allows you to declare that the product was introduced before 13 Dec 2024 and therefore does not require GPSR data.
+            It can be set only with the selected values of the Condition parameter.
     ProductOfferResponse:
       type: object
       properties:
@@ -25934,7 +26842,7 @@ components:
           properties:
             status:
               type: string
-              example: "LISTED"
+              example: 'LISTED'
               enum:
                 - PROPOSED
                 - LISTED
@@ -25959,7 +26867,7 @@ components:
                 name:
                   type: string
                   description: The name of the implied warranty definition.
-                  example: "Implied warranty 1"
+                  example: 'Implied warranty 1'
         returnPolicy:
           allOf:
             - $ref: '#/components/schemas/ReturnPolicy'
@@ -25968,7 +26876,7 @@ components:
                 name:
                   type: string
                   description: The name of the return policy definition.
-                  example: "Return policy 1"
+                  example: 'Return policy 1'
         warranty:
           allOf:
             - $ref: '#/components/schemas/Warranty'
@@ -25977,13 +26885,13 @@ components:
                 name:
                   type: string
                   description: The name of the warranty definition.
-                  example: "Warranty 1"
+                  example: 'Warranty 1'
     DeliveryProductOfferRequest:
       type: object
       properties:
         handlingTime:
           type: string
-          example: PT24H
+          example: 'PT24H'
           description: >-
             Handling time, ISO 8601 duration format.
             This field must be set to one of the following:
@@ -25996,7 +26904,7 @@ components:
                 name:
                   type: string
                   description: The name of the shipping rate.
-                  example: "Shipping rate 1"
+                  example: 'Shipping rate 1'
         additionalInfo:
           type: string
           maxLength: 650
@@ -26005,7 +26913,7 @@ components:
             Additional information about delivery.
             Parameter is deprecated and will be removed in the future.
             Additional information is only visible on marketplace `allegro-pl`.
-          example: "Example additional info"
+          example: 'Example additional info'
     DeliveryProductOfferResponse:
       type: object
       properties:
@@ -26026,13 +26934,13 @@ components:
             Additional information about delivery.
             Parameter is deprecated and will be removed in the future.
             Additional information is only visible on marketplace `allegro-pl`.
-          example: "Example additional info"
+          example: 'Example additional info'
         shipmentDate:
           type: string
           format: date-time
           description: >-
             Shipment date: Format (ISO 8601) - yyyy-MM-dd'T'HH:mm:ss.SSSZ.
-          example: "2019-08-24T14:15:22Z"
+          example: '2019-08-24T14:15:22Z'
     SaleProductOfferPublicationMarketplacesResponse:
       type: object
       description: >-
@@ -26117,6 +27025,7 @@ components:
                   - IN_PROGRESS
                   - NOT_REQUESTED
                   - PENDING
+                example: 'APPROVED'
                 description: >-
                   Possible values:</br>
                   - `APPROVED` - the offer is visible in the given additional marketplace if it is active.</br>
@@ -26167,46 +27076,46 @@ components:
       properties:
         id:
           type: string
-          example: "224017"
+          example: '224017'
         name:
           type: string
           description: The name of the parameter.
-          example: "Manufacturer code"
+          example: 'Manufacturer code'
         rangeValue:
           $ref: '#/components/schemas/ParameterRangeValue'
         values:
           type: array
           items:
             type: string
-            example: "4234"
+            example: '4234'
         valuesIds:
           type: array
           items:
             type: string
-            example: "129970_850936"
+            example: '129970_850936'
       description: Offer's parameter.
     ParameterProductOfferResponse:
       type: object
       properties:
         id:
           type: string
-          example: "224017"
+          example: '224017'
         name:
           type: string
           description: The name of the parameter.
-          example: "Manufacturer code"
+          example: 'Manufacturer code'
         rangeValue:
           $ref: '#/components/schemas/ParameterRangeValue'
         values:
           type: array
           items:
             type: string
-            example: "4234"
+            example: '4234'
         valuesIds:
           type: array
           items:
             type: string
-            example: "129970_850936"
+            example: '129970_850936'
       description: Parameter.
     DiscountsProductOfferRequest:
       type: object
@@ -26217,11 +27126,11 @@ components:
             id:
               type: string
               description: Wholesale price list id
-              example: "5637592a-0a24-4771-b527-d89b2767d821"
+              example: '5637592a-0a24-4771-b527-d89b2767d821'
             name:
               type: string
               description: The name of the wholesale price list definition.
-              example: "Wholesale example"
+              example: 'Wholesale example'
     DiscountsProductOfferResponse:
       type: object
       properties:
@@ -26232,7 +27141,7 @@ components:
       properties:
         id:
           type: string
-          example: "2865624934"
+          example: '2865624934'
           description: The id of the offer that can be associated with this product.
         parameters:
           type: array
@@ -26271,6 +27180,7 @@ components:
           description: >-
             A valid email address you want to add to your account. Maximum length of the part before the `@` sign is
             64 characters.
+          example: 'test@allegro.pl'
     ClassifiedPackages:
       type: object
       required:
@@ -26338,6 +27248,7 @@ components:
           enum:
           - BASE
           - EXTRA
+          example: 'BASE'
       title: ClassifiedPackageConfig
     ClassifiedPackageConfigs:
       type: object
@@ -26418,6 +27329,7 @@ components:
             - "OUTCOME"
             - "REFUND"
             - "BLOCKADES"
+          example: 'INCOME'
         wallet:
           $ref: '#/components/schemas/Wallet'
         value:
@@ -26465,12 +27377,14 @@ components:
             - AF
             - AF_PAYU
             - AF_P24
+          example: 'PAYU'
         type:
           type: string
           description: The type of the wallet.
           enum:
             - AVAILABLE
             - WAITING
+          example: 'AVAILABLE'
         balance:
           $ref: '#/components/schemas/WalletBalance'
     WalletBalance:
@@ -27273,6 +28187,7 @@ components:
                   - PRODUCT_DETACHMENT
                   - ERROR
                   - UNKNOWN
+                  example: 'USER'
                   description: >-
                     Indicates the reason for ending the offer:
                      - `USER` - offer ended by the seller.
@@ -27324,6 +28239,7 @@ components:
             - DISCOUNT
             - STANDARD
             - SOURCING
+          example: 'DISCOUNT'
         eligibility:
           $ref: '#/components/schemas/UserCampaignEligibility'
         application:
@@ -27346,6 +28262,7 @@ components:
         eligible:
           type: boolean
           description: 'Information whether user is eligible to participate in this campaign.'
+          example: true
         refusalReasons:
           type: array
           items:
@@ -27361,8 +28278,9 @@ components:
         code:
           type: string
           description: >-
-            Code corresponding to the message. For more information visit
-            <a href="/badge/#6" target="_blank">the list of available codes</a>.
+            Code corresponding to the message. For more information visit the list of available codes:
+            <a href="../../tutorials/jak-przypisac-oferte-kampanii-GRaj0q6Gwuy#bledy-i-powody-odrzucenia" target="_blank">PL</a> / <a href="../../tutorials/how-to-submit-offers-to-campaigns-AgGjd6EmyH4#errors-and-reasons-for-rejection" target="_blank">EN</a>.
+          example: 'BB5'
         messages:
           type: array
           items:
@@ -27377,10 +28295,12 @@ components:
         text:
           type: string
           description: 'Detailed message.'
+          example: 'Currency is not supported.'
         link:
           type: string
           nullable: true
           description: 'Optional link that redirects to page associated with refusal reason.'
+          example: 'https://na.allegro.pl/regulamin-kampania-BARGAIN'
     ApplicationTimePolicy:
       type: object
       description: 'Time period when the campaign is open for applying for badge.'
@@ -27395,6 +28315,7 @@ components:
             - WITHIN
             - UNTIL
             - NEVER
+          example: 'NEVER'
         from:
           type: string
           description: 'Provided in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601).'
@@ -27424,6 +28345,7 @@ components:
             - WITHIN
             - UNTIL
             - NEVER
+          example: 'ALWAYS'
         from:
           type: string
           description: 'Provided in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601).'
@@ -27449,6 +28371,7 @@ components:
             - WITHIN
             - UNTIL
             - NEVER
+          example: 'ALWAYS'
         from:
           type: string
           description: 'Provided in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601).'
@@ -27470,11 +28393,12 @@ components:
         type:
           type: string
           enum:
-            - "ALWAYS"
-            - "SINCE"
-            - "WITHIN"
-            - "UNTIL"
-            - "NEVER"
+            - ALWAYS
+            - SINCE
+            - WITHIN
+            - UNTIL
+            - NEVER
+          example: 'ALWAYS'
         from:
           type: string
           description: 'Provided in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601).'
@@ -27569,6 +28493,7 @@ components:
               type: string
               enum:
                 - FINISHED
+              example: 'FINISHED'
     BadgePatchPrices:
       type: object
       properties:
@@ -27720,6 +28645,7 @@ components:
             - REQUESTED
             - PROCESSED
             - DECLINED
+          example: 'PROCESSED'
         rejectionReasons:
           type: array
           items:
@@ -27798,6 +28724,7 @@ components:
             - ACTIVE
             - FINISHED
             - DECLINED
+          example: 'FINISHED'
         rejectionReasons:
           type: array
           description: 'A list of messages with rejection reasons. Returned for process.status = DECLINED only.'
@@ -27825,6 +28752,7 @@ components:
           enum:
             - UPDATE
             - FINISH
+          example: 'FINISH'
         createdAt:
           type: string
           description: 'Provided in [ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601).'
@@ -27851,6 +28779,7 @@ components:
             - REQUESTED
             - PROCESSED
             - DECLINED
+          example: 'PROCESSED'
         rejectionReasons:
           type: array
           items:
@@ -28202,6 +29131,7 @@ components:
       properties:
         marketplaceId:
           type: string
+          example: 'allegro-pl'
         basePackages:
           type: array
           description: "Available base promotion packages. Only one base package can be set on an offer."
@@ -28250,12 +29180,14 @@ components:
             - CHANGE
             - REMOVE_WITH_END_OF_CYCLE
             - REMOVE_NOW
+          example: 'CHANGE'
         packageType:
           type: string
           description: "Type of promotion package to be changed/removed."
           enum:
             - BASE
             - EXTRA
+          example: 'BASE'
         packageId:
           type: string
           description: "Promotion package identifier."
@@ -28393,6 +29325,7 @@ components:
           enum:
             - NOW
             - END_OF_CYCLE
+          example: 'END_OF_CYCLE'
     AdditionalMarketplacePromoOptionsCommandModification:
       type: object
       properties:
@@ -28413,6 +29346,7 @@ components:
         id:
           type: string
           description: Command ID
+          example: '9b84e1bc-5341-45e7-837e-4250720e606f'
         taskCount:
           $ref: '#/components/schemas/TaskCount'
       description: Command execution summary
@@ -28456,6 +29390,7 @@ components:
             - DONE
             - ERROR
             - IN_PROGRESS
+          example: 'DONE'
         errors:
           $ref: '#/components/schemas/Errors'
     AllegroPickupDropOffPoint:
@@ -28474,7 +29409,7 @@ components:
       properties:
         id:
           type: string
-          description: Point id. You can use it in Send with Allegro.
+          description: Point id. You can use it in Ship with Allegro.
           example: "1234567890"
         name:
           type: string
@@ -28498,10 +29433,10 @@ components:
               type:
                 type: string
                 description: "Set of values can be extended."
-                example: "PICKUP"
+                example: 'PICKUP'
                 enum:
-                  - "PICKUP"
-                  - "DROPOFF"
+                  - 'PICKUP'
+                  - 'DROPOFF'
         restrictions:
           type: array
           description: "Point restrictions."
@@ -28513,13 +29448,13 @@ components:
               type:
                 type: string
                 description: "Set of values can be extended."
-                example: "OVERLOADED"
+                example: 'OVERLOADED'
                 enum:
-                  - "OVERLOADED"
+                  - OVERLOADED
         description:
           type: string
           description: Point description
-          example: "Sklep z książkami dla dzieci"
+          example: 'Sklep z książkami dla dzieci'
         payments:
           type: array
           description: "Point payment type."
@@ -28530,7 +29465,7 @@ components:
             properties:
               method:
                 type: string
-                example: "CARD"
+                example: 'CARD'
                 enum:
                   - "CASH"
                   - "CARD"
@@ -28546,19 +29481,19 @@ components:
             postCode:
               type: string
               description: Postal code
-              example: "60-166"
+              example: '60-166'
             city:
               type: string
               description: City name
-              example: "Poznań"
+              example: 'Poznań'
             street:
               type: string
               description: Street
-              example: "Solna"
+              example: 'Solna'
             countryCode:
               type: string
               description: Country code
-              example: "PL"
+              example: 'PL'
             coordinates:
               $ref: '#/components/schemas/Coordinates'
         opening:
@@ -28574,15 +29509,15 @@ components:
               dayOfWeek:
                 type: string
                 description: "Day of week (ISO 8601)."
-                example: "MONDAY"
+                example: 'MONDAY'
               from:
                 type: string
                 description: "Start hour."
-                example: "08:00"
+                example: '08:00'
               to:
                 type: string
                 description: "End hour."
-                example: "15:00"
+                example: '15:00'
         carriers:
           type: array
           description: List of carriers that can drop off/pick up packages from point.
@@ -28612,12 +29547,12 @@ components:
             createdAt:
               type: string
               format: date-time
-              example: "2021-04-14T11:30:22.163Z"
+              example: '2021-04-14T11:30:22.163Z'
               description: The start time parcel tracking recording in ISO 8601 format
             updatedAt:
               type: string
               format: date-time
-              example: "2021-04-14T15:21:36.317Z"
+              example: '2021-04-14T15:21:36.317Z'
               description: Time of registration of the last shipment status change in ISO 8601 format
     ParcelTrackingHistory:
       type: object
@@ -28643,12 +29578,12 @@ components:
             createdAt:
               type: string
               format: date-time
-              example: "2021-04-14T11:30:22.163Z"
+              example: '2021-04-14T11:30:22.163Z'
               description: The start time parcel tracking recording in ISO 8601 format
             updatedAt:
               type: string
               format: date-time
-              example: "2021-04-14T15:21:36.317Z"
+              example: '2021-04-14T15:21:36.317Z'
               description: Time of registration of the last shipment status change in ISO 8601 format
     AllegroParcelTrackingStatus:
       type: object
@@ -28659,7 +29594,7 @@ components:
         occurredAt:
           type: string
           format: date-time
-          example: "2021-04-14T15:21:36.317Z"
+          example: '2021-04-14T15:21:36.317Z'
           description: Actual shipment status change time in ISO 8601 format
         code:
           type: string
@@ -28672,7 +29607,7 @@ components:
             - "PENDING"
             - "RELEASED_FOR_DELIVERY"
             - "RETURNED"
-          example: "DELIVERED"
+          example: 'DELIVERED'
           description: >-
             Status of the shipment.
             - `AVAILABLE_FOR_PICKUP` - The parcel is awaiting for pickup.
@@ -28686,9 +29621,11 @@ components:
         details:
           type: string
           description: Optional description for a given status, mainly intended to describe the problem with the shipment
+          example: 'Recipient out of reach'
         terminal:
           type: boolean
           description: Indicates the final status, after which there should be no more status changes
+          example: true
     ParcelTrackingStatus:
       type: object
       required:
@@ -28698,7 +29635,7 @@ components:
         occurredAt:
           type: string
           format: date-time
-          example: "2021-04-14T15:21:36.317Z"
+          example: '2021-04-14T15:21:36.317Z'
           description: Actual shipment status change time in ISO 8601 format
         code:
           type: string
@@ -28711,7 +29648,7 @@ components:
             - "PENDING"
             - "RELEASED_FOR_DELIVERY"
             - "RETURNED"
-          example: "DELIVERED"
+          example: 'DELIVERED'
           description: >-
             Status of the shipment.
             - `AVAILABLE_FOR_PICKUP` - The parcel is awaiting for pickup.
@@ -28780,6 +29717,7 @@ components:
         exemptionRequired:
           type: boolean
           description: 'Exemption field must be filled out if true, otherwise is optional.'
+          example: false
     TaxExemption:
       type: object
       properties:
@@ -28799,6 +29737,7 @@ components:
           enum:
             - "ALLOWED"
             - "DENIED"
+          example: 'ALLOWED'
         additionalMarketplaces:
           description: "Consent statuses on marketplaces other than the base marketplace of the account."
           type: "object"
@@ -28811,6 +29750,7 @@ components:
                 enum:
                   - "ALLOWED"
                   - "DENIED"
+                example: 'ALLOWED'
     AllegroPricesAccountConsentChangeResponse:
       type: "object"
       properties:
@@ -28819,6 +29759,7 @@ components:
           enum:
             - "ALLOWED"
             - "DENIED"
+          example: 'ALLOWED'
         additionalMarketplaces:
           description: "Consent statuses on marketplaces other than the base marketplace of the account."
           type: "object"
@@ -28831,6 +29772,7 @@ components:
                 enum:
                   - "ALLOWED"
                   - "DENIED"
+                example: 'ALLOWED'
     AllegroPricesOfferChangeRequest:
       type: "object"
       properties:
@@ -28840,6 +29782,7 @@ components:
           enum:
             - "ALLOWED"
             - "DENIED"
+          example: 'ALLOWED'
         additionalMarketplaces:
           type: "object"
           description: "Use it to update the consent on marketplaces other than the base marketplace of the offer."
@@ -28852,6 +29795,7 @@ components:
                 enum:
                   - "ALLOWED"
                   - "DENIED"
+                example: 'ALLOWED'
     AllegroPricesOfferConsentChangeResponse:
       type: "object"
       properties:
@@ -28861,6 +29805,7 @@ components:
           enum:
             - "ALLOWED"
             - "DENIED"
+          example: 'ALLOWED'
         additionalMarketplaces:
           description: "Consent statuses on marketplaces other than the base marketplace of the offer."
           type: "object"
@@ -28873,6 +29818,7 @@ components:
                 enum:
                   - "ALLOWED"
                   - "DENIED"
+                example: 'ALLOWED'
     AllegroPricesEligibilityResponse:
       type: "object"
       properties:
@@ -28881,6 +29827,7 @@ components:
           enum:
             - "ALLOWED"
             - "DENIED"
+          example: 'ALLOWED'
         qualification:
           $ref: "#/components/schemas/AllegroPricesQualificationResponse"
         additionalMarketplaces:
@@ -28895,6 +29842,7 @@ components:
                 enum:
                   - "ALLOWED"
                   - "DENIED"
+                example: 'ALLOWED'
               qualification:
                 $ref: "#/components/schemas/AllegroPricesQualificationResponse"
     AllegroPricesQualificationResponse:
@@ -28905,6 +29853,7 @@ components:
           enum:
             - "QUALIFIED"
             - "DISQUALIFIED"
+          example: 'QUALIFIED'
     AlleDiscountSubmitCommandRequest:
       type: object
       properties:
@@ -28912,6 +29861,7 @@ components:
           type: string
           description: The command UUID. If empty, system generates new one.
           nullable: true
+          example: 'c1b3f63d-d293-4333-911d-a0c1053e2c81'
         input:
           type: object
           description: Command input.
@@ -28930,6 +29880,7 @@ components:
                 id:
                   type: string
                   description: The id of the AlleDiscount campaign.
+                  example: 'ALLEOBNIZKA_20230209'
             proposedPrice:
               type: object
               description: >-
@@ -28939,15 +29890,18 @@ components:
                 amount:
                   type: string
                   description: Amount of the proposed price.
+                  example: '19.99'
                 currency:
                   type: string
                   description: Currency of the proposed price.
+                  example: 'PLN'
     AlleDiscountSubmitCommandResponse:
       type: object
       properties:
         id:
           type: string
           description: Provided UUID of the submit offer command or generated UUID.
+          example: 'c1b3f63d-d293-4333-911d-a0c1053e2c81'
         input:
           type: object
           description: Provided submit offer command input data.
@@ -28959,6 +29913,7 @@ components:
                 id:
                   type: string
                   description: The id of the offer.
+                  example: '10394822344'
             campaign:
               type: object
               description: Campaign data.
@@ -28966,6 +29921,7 @@ components:
                 id:
                   type: string
                   description: The id of the campaign.
+                  example: 'ALLEOBNIZKA_20230209'
             proposedPrice:
               type: object
               description: The price you agreed to lower to for the offer.
@@ -28973,9 +29929,11 @@ components:
                 amount:
                   type: string
                   description: Amount of the price.
+                  example: '19.99'
                 currency:
                   type: string
                   description: Currency of the price.
+                  example: 'PLN'
         output:
           type: object
           description: Submit offer command output data.
@@ -28985,20 +29943,24 @@ components:
               description: Execution status of the command.
               enum:
                 - NEW
+              example: 'NEW'
             createdAt:
               type: string
               description: Creation date of the command. ISO 8601 format.
               format: date-time
+              example: '2020-08-26T12:52:04Z'
             updatedAt:
               type: string
               format: date-time
               description: Update date of the command. ISO 8601 format.
+              example: '2020-08-26T12:52:04Z'
     AlleDiscountGetSubmitCommandResponse:
       type: object
       properties:
         id:
           type: string
           description: The id of the command.
+          example: 'c1b3f63d-d293-4333-911d-a0c1053e2c81'
         input:
           type: object
           description: Provided submit offer command input data.
@@ -29010,6 +29972,7 @@ components:
                 id:
                   type: string
                   description: The id of the offer.
+                  example: '10394822344'
             campaign:
               type: object
               description: Campaign data.
@@ -29017,6 +29980,7 @@ components:
                 id:
                   type: string
                   description: The id of the campaign.
+                  example: 'ALLEOBNIZKA_20230209'
             proposedPrice:
               type: object
               description: The price you agreed to lower to for the offer.
@@ -29024,9 +29988,11 @@ components:
                 amount:
                   type: string
                   description: Amount of the price.
+                  example: '19.99'
                 currency:
                   type: string
                   description: Currency of the price.
+                  example: 'PLN'
         output:
           type: object
           description: Submit offer command output data.
@@ -29046,14 +30012,17 @@ components:
                 - IN_PROGRESS
                 - SUCCESSFUL
                 - FAILED
+              example: 'SUCCESSFUL'
             createdAt:
               type: string
               format: date-time
               description: Command creation date. ISO 8601 format.
+              example: '2020-08-26T12:52:04Z'
             updatedAt:
               type: string
               format: date-time
               description: Command update date. ISO 8601 format.
+              example: '2020-08-26T12:52:04Z'
             newOfferParticipation:
               type: object
               nullable: true
@@ -29062,6 +30031,7 @@ components:
                 participationId:
                   type: string
                   description: The id of the participation created by submit offer command.
+                  example: 'f9a4a70c-6db9-4473-976c-90f8df9f74e8'
             errors:
               type: array
               items:
@@ -29073,6 +30043,7 @@ components:
           type: string
           description: The Command UUID. If empty, system generates new one.
           nullable: true
+          example: 'c1b3f63d-d293-4333-911d-a0c1053e2c81'
         input:
           type: object
           description: Command input.
@@ -29083,12 +30054,14 @@ components:
                 The id of the offer participation you wish to withdraw.
                 Participation id can be found using `GET /sale/alle-discount/{campaignId}/submitted-offers` or
                 `GET /sale/alle-discount/submit-offer-commands` endpoints.
+              example: 'f9a4a70c-6db9-4473-976c-90f8df9f74e8'
     AlleDiscountWithdrawCommandResponse:
       type: object
       properties:
         id:
           type: string
           description: The id of the command.
+          example: 'c1b3f63d-d293-4333-911d-a0c1053e2c81'
         input:
           type: object
           description: Provided withdraw offer command input data.
@@ -29096,6 +30069,7 @@ components:
             participationId:
               type: string
               description: The id of the participation which will be withdrawn.
+              example: 'f9a4a70c-6db9-4473-976c-90f8df9f74e8'
         output:
           type: object
           description: Withdraw offer command output data.
@@ -29105,20 +30079,24 @@ components:
               description: Execution status of the command.
               enum:
                 - NEW
+              example: 'NEW'
             createdAt:
               type: string
               format: date-time
               description: Creation date of the command. ISO 8601 format.
+              example: '2020-08-26T12:52:04Z'
             updatedAt:
               type: string
               format: date-time
               description: Update date of the command. ISO 8601 format.
+              example: '2020-08-26T12:52:04Z'
     AlleDiscountGetWithdrawCommandResponse:
       type: object
       properties:
         id:
           type: string
           description: The id of the command.
+          example: 'c1b3f63d-d293-4333-911d-a0c1053e2c81'
         input:
           type: object
           description: Provided withdraw offer command input data.
@@ -29126,6 +30104,7 @@ components:
             participationId:
               type: string
               description: The id of the withdrawn participation.
+              example: 'f9a4a70c-6db9-4473-976c-90f8df9f74e8'
         output:
           type: object
           description: Withdraw offer command output data.
@@ -29143,14 +30122,17 @@ components:
                 - IN_PROGRESS
                 - SUCCESSFUL
                 - FAILED
+              example: 'NEW'
             createdAt:
               type: string
               format: date-time
               description: Command creation date. ISO 8601 format.
+              example: '2020-08-26T12:52:04Z'
             updatedAt:
               type: string
               format: date-time
               description: Command update date. ISO 8601 format.
+              example: '2020-08-26T12:52:04Z'
             withdrawnOfferParticipation:
               type: object
               nullable: true
@@ -29159,6 +30141,7 @@ components:
                 participationId:
                   type: string
                   description: The id of the withdrawn participation.
+                  example: 'f9a4a70c-6db9-4473-976c-90f8df9f74e8'
             errors:
               type: array
               items:
@@ -29369,12 +30352,15 @@ components:
                   code:
                     type: string
                     description: Error code.
+                    example: 'BB13'
                   message:
                     type: string
                     description: Error message.
+                    example: 'Too many requests from this account.'
         purchaseLimit:
           type: integer
           description: Limit of purchases on the offer.
+          example: 1
     AlleDiscountListCampaignsResponse:
       type: object
       properties:
@@ -29414,17 +30400,17 @@ components:
                       - WITHIN
                     enum:
                       - WITHIN
-                    example: WITHIN
+                    example: 'WITHIN'
                   from:
                     type: string
                     format: date-time
                     description: Provided in ISO 8601 format.
-                    example: 2020-08-26T12:52:04Z
+                    example: '2020-08-26T12:52:04Z'
                   to:
                     type: string
                     format: date-time
                     description: Provided in ISO 8601 format.
-                    example: 2020-08-26T12:52:04Z
+                    example: '2020-08-26T12:52:04Z'
               application:
                 description: Time period when the campaign is open for offer submission.
                 properties:
@@ -29435,16 +30421,17 @@ components:
                       - WITHIN
                     enum:
                       - WITHIN
+                    example: 'WITHIN'
                   from:
                     type: string
                     format: date-time
                     description: Provided in ISO 8601 format.
-                    example: 2020-08-26T12:52:04Z
+                    example: '2020-08-26T12:52:04Z'
                   to:
                     type: string
                     format: date-time
                     description: Provided in ISO 8601 format.
-                    example: 2020-08-26T12:52:04Z
+                    example: '2020-08-26T12:52:04Z'
               publication:
                 description: >-
                   Time period when reduced price (and possible badge if it applies for campaign) is displayed on
@@ -29457,16 +30444,17 @@ components:
                       - WITHIN
                     enum:
                       - WITHIN
+                    example: 'WITHIN'
                   from:
                     type: string
                     format: date-time
                     description: Provided in ISO 8601 format.
-                    example: 2020-08-26T12:52:04Z
+                    example: '2020-08-26T12:52:04Z'
                   to:
                     type: string
                     format: date-time
                     description: Provided in ISO 8601 format.
-                    example: 2020-08-26T12:52:04Z
+                    example: '2020-08-26T12:52:04Z'
               marketplace:
                 type: object
                 description: Campaign marketplace data.
@@ -29474,6 +30462,7 @@ components:
                   id:
                     type: string
                     description: The id of the marketplace.
+                    example: 'allegro-pl'
     AlleDiscountRequiredMerchantPriceDto:
       type: object
       description: >-
@@ -29528,7 +30517,7 @@ components:
           type: string
           format: date-time
           nullable: true
-          example: 2020-08-26T12:52:04Z
+          example: '2020-08-26T12:52:04Z'
         interlocutor:
           $ref: '#/components/schemas/Interlocutor'
     ThreadId:
@@ -29604,10 +30593,13 @@ components:
       properties:
         fileName:
           type: string
+          example: 'exampleName.jpeg'
         mimeType:
           type: string
+          example: 'image/jpeg'
         url:
           type: string
+          example: 'https://upload.allegro.pl/message-center/message-attachments/97dc0b60-2da4-4247-92ba-b748630ba0f6'
         status:
           type: string
           enum:
@@ -29615,7 +30607,7 @@ components:
             - SAFE
             - UNSAFE
             - EXPIRED
-          example: NEW
+          example: 'NEW'
       required:
         - fileName
         - status
@@ -29644,7 +30636,7 @@ components:
         createdAt:
           type: string
           format: date-time
-          example: 2020-08-26T12:52:04Z
+          example: '2020-08-26T12:52:04Z'
         thread:
           $ref: '#/components/schemas/ThreadId'
         author:
@@ -30164,6 +31156,8 @@ components:
           $ref: '#/components/schemas/HandlingUnit'
         shipping:
           $ref: '#/components/schemas/Shipping'
+        declaredVolumeInCc:
+          $ref: '#/components/schemas/DeclaredAsnVolume'
       required:
         - items
     CreateAdvanceShipNoticeRequest:
@@ -30178,6 +31172,8 @@ components:
           $ref: '#/components/schemas/HandlingUnit'
         shipping:
           $ref: '#/components/schemas/Shipping'
+        declaredVolumeInCc:
+          $ref: '#/components/schemas/DeclaredAsnVolume'
       required:
         - items
     UpdateSubmittedAdvanceShipNoticeRequest:
@@ -30189,9 +31185,11 @@ components:
           items:
             $ref: '#/components/schemas/ProductItem'
         handlingUnit:
-          $ref: '#/components/schemas/UpdateSubmittedHandlingUnitInput'
+          $ref: '#/components/schemas/HandlingUnit'
         shipping:
-          $ref: '#/components/schemas/UpdateSubmittedShippingInput'
+          $ref: '#/components/schemas/Shipping'
+        declaredVolumeInCc:
+          $ref: '#/components/schemas/DeclaredAsnVolume'
     UpdateSubmittedHandlingUnitInput:
       type: object
       description: Represents information about handling unit.
@@ -30218,6 +31216,54 @@ components:
         thirdParty:
           $ref: '#/components/schemas/ThirdParty'
     AdvanceShipNoticeResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: An UUID identifier of ASN.
+          example: 71529ad2-2265-4e15-b76b-c17025d848f7
+        displayNumber:
+          type: string
+          description: A human friendly identifier of ASN.
+          example: A-210310-0000002
+        status:
+          $ref: '#/components/schemas/AdvanceShipNoticeStatus'
+        createdAt:
+          type: string
+          format: date-time
+          description: 'The date and time of Advance Ship Notice creation. Provided in [ISO 8601 format](link: https://en.wikipedia.org/wiki/ISO_8601).'
+          example: '2020-08-26T12:50:04Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: 'The date and time of last Advance Ship Notice update. Provided in [ISO 8601 format](link: https://en.wikipedia.org/wiki/ISO_8601).'
+          example: '2020-08-26T12:52:04Z'
+        items:
+          type: array
+          description: A list of product items.
+          items:
+            $ref: '#/components/schemas/ProductItem'
+        handlingUnit:
+          $ref: '#/components/schemas/HandlingUnit'
+        labels:
+          $ref: '#/components/schemas/Labels'
+        shipping:
+          $ref: '#/components/schemas/ShippingExtended'
+        submittedAt:
+          type: string
+          format: date-time
+          description: 'The date and time of Advance Ship Notice submission. Provided in [ISO 8601 format](link: https://en.wikipedia.org/wiki/ISO_8601).'
+        volumeInCc:
+          $ref: '#/components/schemas/AsnVolume'
+      required:
+        - id
+        - displayNumber
+        - status
+        - createdAt
+        - updatedAt
+        - items
+    AdvanceShipNoticeListItemResponse:
       type: object
       properties:
         id:
@@ -30298,6 +31344,8 @@ components:
           $ref: '#/components/schemas/Labels'
         shipping:
           $ref: '#/components/schemas/ShippingExtended'
+        volumeInCc:
+          $ref: '#/components/schemas/AsnVolume'
       required:
         - id
         - displayNumber
@@ -30312,7 +31360,7 @@ components:
         advanceShipNotices:
           type: array
           items:
-            $ref: '#/components/schemas/AdvanceShipNoticeResponse'
+            $ref: '#/components/schemas/AdvanceShipNoticeListItemResponse'
         count:
           type: number
           description: A number of Advance Ship Notices in response.
@@ -30618,6 +31666,14 @@ components:
           type: string
           description: Tax identification number verification status. Only the ACCEPTED status allows you to send products to the Allegro Warehouse.
           example: 'ACCEPTED'
+    DeclaredAsnVolume:
+      type: number
+      description: Total volume of all items declared by the merchant for delivery to the warehouse as part of the advance shipment notice, in cubic centimeters.
+      example: 1500
+    AsnVolume:
+      type: number
+      description: Total volume (in cubic centimeters) of all items, declared by the merchant or calculated based on product dimensions stored in the product catalog.
+      example: 1500
     StockProductList:
       type: object
       description: Represents the current stock for the seller.
@@ -30685,6 +31741,7 @@ components:
           description: >-
             A number of items which are available on the current active offer for the product.
           example: 4
+          deprecated: true
         available:
           type: number
           description: >-
@@ -31389,6 +32446,71 @@ components:
         cutLine:
           description: Put additional cut lines. Only for PDF file with A4 size.
           type: boolean
+        summaryReport:
+          type: object
+          description: Set of parameters for creating extra labels with shipment summary report. If null then report will be omitted.
+          required:
+            - placement
+            - fields
+          properties:
+            placement:
+              description: "Selecting the generator behavior. Indicating where the reports are to be attached: all at the end of the file or separately after each label."
+              type: string
+              example: LAST
+              enum:
+                - LAST
+                - EVERY
+            fields:
+              description: Not-empty list of fields printed on the report.
+              type: array
+              items:
+                type: string
+                example: WAYBILL
+                enum:
+                  - WAYBILL
+                  - ORDER_ID
+                  - BUYER_LOGIN
+                  - ITEMS
+                  - DIMS_AND_WEIGHT
+                  - ADD_LABEL_TEXT
+                  - NOTES_FOR_ORDER
+                  - REF_NUMBER
+                  - COD
+                  - INSURANCE
+    PickupDto:
+      type: object
+      properties:
+        id:
+          type: string
+          example: ba88f0fb-acf3-438a-877e-580davf34874
+        carrierPickupId:
+          type: string
+          description: Pickup identification number used in the carrier systems.
+          example: AD2923111
+        carrier:
+          type: string
+          description: ID of carrier that handles the service of the shipment.
+          example: PACKETA
+        pickupCarrier:
+          type: string
+          description: ID of carrier that transports the package from the pickup.
+          example: POCZTA_POLSKA
+        address:
+          $ref: '#/components/schemas/SenderAddressDto'
+        shipmentIds:
+          type: array
+          description: List of shipment IDs regarding this pickup.
+          items:
+            type: string
+            description: Shipment ID.
+            example:  ba88f0fb-acf3-438a-877e-58123vf34874
+        waybills:
+          type: array
+          description: List of waybills regarding this pickup.
+          items:
+            type: string
+            description: Waybill.
+            example:  1019374227038U
     PackageDto:
       type: object
       properties:
@@ -32158,3 +33280,444 @@ components:
               type: string
               description: Discount percentage value. The fractional part must be absent or equal to 0.
               example: '5'
+    PostPurchaseIssueListResponse:
+      type: object
+      properties:
+        issues:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostPurchaseIssue'
+    PostPurchaseIssue:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Identifier of the issue
+        type:
+          type: string
+          description: Whether the issue is a dispute or a claim
+          enum:
+            - DISPUTE
+            - CLAIM
+        referenceNumber:
+          type: string
+          nullable: true
+          description: Human readable claim identifier. Null for disputes
+          example: 123/2024
+        decisionDueDate:
+          type: string
+          nullable: true
+          format: date-time
+          description: Deadline for claim acceptance or rejection. Null for disputes
+          example: "2025-06-29T18:12:12.000.019Z"
+        openedDate:
+          type: string
+          format: date-time
+          example: "2025-06-15T18:12:12.000.019Z"
+          description: The most recent date when the issue has been opened or reopened
+        subject:
+          type: string
+          description: Subject of the issue
+          nullable: true
+        buyer:
+          $ref: '#/components/schemas/PostPurchaseIssueUser'
+        checkoutForm:
+          $ref: '#/components/schemas/PostPurchaseIssueCheckoutForm'
+        currentState:
+          $ref: '#/components/schemas/PostPurchaseIssueState'
+        chat:
+          $ref: '#/components/schemas/PostPurchaseIssueChat'
+        expectations:
+          type: array
+          description: "A list of expected solutions"
+          items:
+            $ref: '#/components/schemas/PostPurchaseIssueExpectation'
+        description:
+          type: string
+          nullable: true
+        offer:
+          allOf:
+            - $ref: '#/components/schemas/PostPurchaseIssueOffer'
+          description: Data about offer that is the subject of this issue, if any.
+        product:
+          allOf:
+            - $ref: '#/components/schemas/PostPurchaseIssueProduct'
+          description: Data about product that is the subject of this issue, if any.
+        reason:
+          allOf:
+            - $ref: '#/components/schemas/PostPurchaseIssueReason'
+          description: Claim reason. Not present for disputes
+        right:
+          type: string
+          description: Field only present for claims (not disputes)
+          nullable: true
+          enum:
+            - WARRANTY
+            - COMPLAINT
+            - null
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostPurchaseIssueAttachment'
+    PostPurchaseIssueStatus:
+      type: string
+      enum:
+        - DISPUTE_CLOSED
+        - DISPUTE_ONGOING
+        - DISPUTE_UNRESOLVED
+        - CLAIM_SUBMITTED
+        - CLAIM_ACCEPTED
+        - CLAIM_REJECTED
+    PostPurchaseIssueUser:
+      type: object
+      properties:
+        id:
+          type: string
+        login:
+          type: string
+    PostPurchaseIssueCheckoutForm:
+      type: object
+      properties:
+        id:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-05-10T12:12:12.019Z"
+    PostPurchaseIssueState:
+      type: object
+      description: Formal claim state data
+      properties:
+        status:
+          $ref: '#/components/schemas/PostPurchaseIssueStatus'
+        statusDueDate:
+          type: string
+          format: date-time
+          example: "2025-06-15T12:12:12.019Z"
+          nullable: true
+          description: "Deadline for the seller to accept or reject the claim. Null for disputes"
+    PostPurchaseIssueChat:
+      type: object
+      description: Message and state change notification data
+      properties:
+        lastMessage:
+          $ref: '#/components/schemas/PostPurchaseIssueLastMessage'
+        messagesCount:
+          type: integer
+          format: int32
+          minimum: 0
+        initialMessage:
+          $ref: '#/components/schemas/PostPurchaseIssueFirstMessage'
+    PostPurchaseIssueLastMessage:
+      type: object
+      description: Summary of the most recent message data
+      properties:
+        status:
+          type: string
+          enum:
+            - NEW
+            - SELLER_REPLIED
+            - BUYER_REPLIED
+            - ALLEGRO_ADVISOR_REPLIED
+          description: >-
+            Status of the last message in a dispute or claim:
+              - *NEW* - The seller never sent a message in the chat. Latest message could have been sent by buyer or advisor.
+              - *SELLER_REPLIED* - The last message was written by the seller.
+              - *BUYER_REPLIED - The last message was written by the buyer and the seller has written at least one message previously.
+              - *ALLEGRO_ADVISOR_REPLIED - The last message was written by an advisor and the seller has written at least one message previously.
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-10T14:12:12.019Z"
+    PostPurchaseIssueFirstMessage:
+      type: object
+      description: Message with text, attachment or both
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostPurchaseIssueAttachment'
+        author:
+          $ref: '#/components/schemas/PostPurchaseIssueAuthor'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-10T12:12:12.019Z"
+    PostPurchaseIssueAttachment:
+      type: object
+      properties:
+        fileName:
+          type: string
+          maxLength: 255
+        url:
+          type: string
+          description: Direct link to the attachment
+          example: "https://api.allegro.pl/sale/issues/attachments/eeed0007-4404-4176-a1eb-11d26f056c0d"
+    PostPurchaseIssueAuthor:
+      type: object
+      properties:
+        login:
+          type: string
+          description: Not present if role is ADMIN or FULFILLMENT
+        role:
+          type: string
+          enum:
+            - BUYER
+            - ADMIN
+    PostPurchaseIssueOffer:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The offer that is the subject of this issue.
+          nullable: true
+        quantity:
+          type: integer
+          format: int32
+          minimum: 1
+          description: How many instances of this offer are subject to this issue.
+      nullable: true
+    PostPurchaseIssueProduct:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: The offer that is the subject of this issue.
+          nullable: true
+      nullable: true
+    PostPurchaseIssueExpectation:
+      type: object
+      properties:
+        name:
+          type: string
+          enum:
+            - REPAIR
+            - EXCHANGE
+            - REFUND
+            - PARTIAL_REFUND
+            - null
+          nullable: true
+          description: Null for disputes, only available for claims.
+        refund:
+          allOf:
+            - $ref: '#/components/schemas/PostPurchaseIssueRefund'
+    PostPurchaseIssueRefund:
+      type: object
+      description: Expected refund
+      properties:
+        amount:
+          type: string
+          description: Expected money amount
+          example: "2.50"
+        currency:
+          type: string
+          description: ISO 4217 currency code
+          example: "PLN"
+      nullable: true
+    PostPurchaseIssueReason:
+      type: object
+      properties:
+        type:
+          type: string
+          enum:
+            - NO_PRODUCT_RECEIVED
+            - NO_PRODUCT_IN_PARCEL
+            - NO_PROOF_OF_PURCHASE_MANUAL_OR_WARRANTY
+            - MISSING_PRODUCT_ELEMENT
+            - PRODUCT_AND_PARCEL_DAMAGED_IN_TRANSIT
+            - PRODUCT_DAMAGED_PARCEL_INTACT
+            - DEFECT_FOUND_DURING_USE
+            - NOT_AS_DESCRIBED
+            - SELLER_DOES_NOT_WANT_TO_ACCEPT_RETURN
+            - PROBLEM_WITH_SENDING_PRODUCT_BACK
+            - NO_REFUND_AFTER_RETURNING_PRODUCT
+            - NO_REFUND_AFTER_CANCELING_ORDER
+            - DID_NOT_RECEIVE_GOODS_AFTER_PAYMENT
+            - RECEIVED_ITEMS_NOT_MATCHING_DESCRIPTION
+            - RECEIVED_INCOMPLETE_ORDER
+            - ITEM_IS_DAMAGED
+            - PROBLEM_WITH_WITHDRAWAL_CANCELLATION_OF_PURCHASE
+            - PROBLEM_WITH_GOODS_RETURN_CANCELLATION_OF_PURCHASE
+        description:
+          type: string
+          nullable: true
+      nullable: true
+    PostPurchaseIssueChatResponse:
+      type: object
+      properties:
+        chat:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostPurchaseIssueChatMessage'
+    PostPurchaseIssueChatMessage:
+      type: object
+      description: Post purchase issue message with text or attachment or both
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostPurchaseIssueAttachment'
+        author:
+          $ref: '#/components/schemas/PostPurchaseIssueMessageAuthor'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-10T12:12:12.019Z"
+    PostPurchaseIssueMessage:
+      type: object
+      description: Post purchase issue message with text or attachment or both
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        attachments:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostPurchaseIssueAttachment'
+        author:
+          $ref: '#/components/schemas/PostPurchaseIssueMessageAuthor'
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-06-10T12:12:12.019Z"
+    PostPurchaseIssueMessageAuthor:
+      type: object
+      description: Author of the message
+      properties:
+        login:
+          type: string
+          description: Not present if role is ADMIN, SYSTEM or FULFILLMENT
+        role:
+          type: string
+          enum:
+            - BUYER
+            - SELLER
+            - ADMIN
+            - SYSTEM
+            - FULFILLMENT
+    CpsConversionResponse:
+      type: object
+      properties:
+        conversions:
+          type: array
+          description: CPS conversions list associated with filters and logged-in user.
+          items:
+            $ref: '#/components/schemas/CpsConversion'
+    CpsConversion:
+      type: object
+      description: Represents a CPS conversion.
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the conversion.
+          example: "2991e29e-5fbc-46f5-963a-65c326ba65c2"
+        status:
+          type: string
+          description: Current status of the conversion.
+          enum:
+            - CREATED
+            - REJECTED
+            - CONFIRMED
+          example: CONFIRMED
+        lastModifiedAt:
+          type: string
+          format: date-time
+          description: Date and time when the conversion was last modified.
+          example: 2021-11-30T15:17:05.130Z
+        orderCreatedAt:
+          type: string
+          format: date-time
+          description: Date and time when the related order was created.
+          example: 2021-11-25T15:00:05.150Z
+        quantity:
+          type: integer
+          description: Number of ordered items associated with the conversion subtracted by number of items returned.
+          example: 5
+        marketplace:
+          type: object
+          description: Information about the marketplace.
+          properties:
+            id:
+              $ref: '#/components/schemas/MarketplaceId'
+        offer:
+          type: object
+          description: Information about the offer.
+          properties:
+            id:
+              type: string
+              description: Identifier of the offer.
+              example: 11223344556
+            category:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: The Category ID.
+                  example: "257929"
+            unitPrice:
+              type: object
+              description: Unit price of the offer.
+              properties:
+                amount:
+                  type: string
+                  description: Price amount.
+                  example: "100.00"
+                currency:
+                  type: string
+                  description: Currency code.
+                  example: PLN
+            seller:
+              type: object
+              description: Information about the seller.
+              properties:
+                login:
+                  type: string
+                  description: Login of the seller
+                  example: login
+        commission:
+          type: object
+          description: Commission information.
+          properties:
+            publisher:
+              type: object
+              description: Publisher's commission.
+              properties:
+                amount:
+                  type: string
+                  description: Commission amount.
+                  example: "1.00"
+                currency:
+                  type: string
+                  description: Currency code.
+                  example: PLN
+            allegro:
+              type: object
+              description: Allegro's commission.
+              properties:
+                amount:
+                  type: string
+                  description: Commission amount.
+                  example: "10.00"
+                currency:
+                  type: string
+                  description: Currency code.
+                  example: PLN
+        publisherUrlParameters:
+          type: object
+          description: Parameters from the publisher's URL.
+          additionalProperties:
+            type: string
+          example:
+            param1: value1
+            param2: value2
+            param3: value3
