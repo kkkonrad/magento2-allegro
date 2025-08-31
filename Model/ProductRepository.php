@@ -47,10 +47,10 @@ class ProductRepository extends \Magento\Catalog\Model\ProductRepository impleme
         MimeTypeExtensionMap $mimeTypeExtensionMap,
         ImageProcessorInterface $imageProcessor,
         \Magento\Framework\Api\ExtensionAttribute\JoinProcessorInterface $extensionAttributesJoinProcessor,
-        CollectionProcessorInterface $collectionProcessor = null,
-        \Magento\Framework\Serialize\Serializer\Json $serializer = null,
+        ?CollectionProcessorInterface $collectionProcessor = null,
+        ?\Magento\Framework\Serialize\Serializer\Json $serializer = null,
         $cacheLimit = 1000,
-        ReadExtensions $readExtensions = null
+        ?ReadExtensions $readExtensions = null
     ) {
         parent::__construct(
             $productFactory,
@@ -92,7 +92,7 @@ class ProductRepository extends \Magento\Catalog\Model\ProductRepository impleme
     public function getByAllegroOfferId(
         int $allegroOfferId,
         bool $editMode = false,
-        int $storeId = null,
+        ?int $storeId = null,
         bool $forceReload = false
     ): ProductInterface {
         $cacheKey = $this->getCacheKey([$editMode, $storeId]);

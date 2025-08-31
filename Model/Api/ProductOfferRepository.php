@@ -149,7 +149,7 @@ class ProductOfferRepository implements ProductOfferRepositoryInterface
             'name' => $productOffer->getName(),
             'sellingMode' => $productOffer->getSellingMode(),
             'location' => $productOffer->getLocation(),
-            'language' => 'pl-PL'
+            'language' => 'pl'
         ];
 
         // Stock - jeśli dostępny

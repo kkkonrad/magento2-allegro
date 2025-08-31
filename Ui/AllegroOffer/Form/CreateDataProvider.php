@@ -11,11 +11,15 @@ use Magento\Framework\App\RequestInterface;
 use Magento\Framework\Registry;
 use Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider;
 use Macopedia\Allegro\Model\AllegroPrice;
-
 use Magento\InventorySalesAdminUi\Model\GetSalableQuantityDataBySku;
 
 class CreateDataProvider extends DataProvider
 {
+    /**
+     * @var array
+     */
+    protected $_loadedData = [];
+
     /** @var GetSalableQuantityDataBySku */
     protected $getSalableQuantityDataBySku;
 
@@ -27,9 +31,6 @@ class CreateDataProvider extends DataProvider
 
     /** @var AllegroPrice */
     protected $allegroPrice;
-
-    /** @var array */
-    protected $_loadedData;
 
     /**
      * CreateDataProvider constructor.
@@ -80,16 +81,18 @@ class CreateDataProvider extends DataProvider
     }
 
     /**
+     * Get Allegro image for product
+     *
      * @param Product $product
      * @return string
      */
-    protected function getAllegroImage(Product $product)
+    protected function getAllegroImage(Product $product): string
     {
         if ($product->getAllegroImage() && $product->getAllegroImage() !== 'no_selection') {
             return $product->getAllegroImage();
         }
 
-        return $product->getImage();
+        return $product->getImage() ?: '';
     }
 
     /**
@@ -100,37 +103,56 @@ class CreateDataProvider extends DataProvider
     public function getData()
     {
         \Magento\Framework\Profiler::start(__CLASS__ . '::' . __METHOD__);
-        if (isset($this->_loadedData)) {
+        if (isset($this->_loadedData) && !empty($this->_loadedData)) {
             \Magento\Framework\Profiler::stop(__CLASS__ . '::' . __METHOD__);
             return $this->_loadedData;
         }
 
-        /** @var Product $product */
+        /** @var Product|null $product */
         $product = $this->registry->registry('product');
-        $stock = $this->getSalableQuantityDataBySku->execute($product->getSku());
-        $images = $product->getMediaGalleryImages()->toArray();
-        $allegroImage =  $this->getAllegroImage($product);
-        $price = $this->allegroPrice->get($product);
-        foreach ($images['items'] as $key => $image) {
-            if ($image['file'] !== $allegroImage) {
-                unset($images['items'][$key]);
+
+        if (!$product) {
+            \Magento\Framework\Profiler::stop(__CLASS__ . '::' . __METHOD__);
+            return $this->_loadedData;
+        }
+
+        try {
+            $stock = $this->getSalableQuantityDataBySku->execute($product->getSku());
+            $stockQty = isset($stock[0]['qty']) ? (int)$stock[0]['qty'] : 0;
+        } catch (\Exception $e) {
+            $stockQty = 0;
+        }
+
+        $mediaGalleryImages = $product->getMediaGalleryImages();
+        $images = [];
+        $allegroImage = $this->getAllegroImage($product);
+
+        if ($mediaGalleryImages) {
+            $imagesArray = $mediaGalleryImages->toArray();
+            if (isset($imagesArray['items']) && is_array($imagesArray['items'])) {
+                foreach ($imagesArray['items'] as $image) {
+                    if (isset($image['file']) && $image['file'] === $allegroImage) {
+                        $images[] = $image;
+                    }
+                }
             }
         }
 
+        $price = $this->allegroPrice->get($product);
         $eanAttributeCode = $this->config->getEanAttributeCode();
         $descriptionAttributeCode = $this->config->getDescriptionAttributeCode();
 
         $this->_loadedData[$product->getId()] = [
             'allegro' => [
                 'product' => $product->getId(),
-                'ean' => $eanAttributeCode ? $product->getData($eanAttributeCode) : '',
-                'name' => $product->getName(),
+                'ean' => $eanAttributeCode ? (string)$product->getData($eanAttributeCode) : '',
+                'name' => $product->getName() ?: '',
                 'description' => $descriptionAttributeCode
-                    ? $product->getData($descriptionAttributeCode)
-                    : $product->getDescription(),
+                    ? (string)$product->getData($descriptionAttributeCode)
+                    : (string)$product->getDescription(),
                 'price' => $price,
-                'images' => isset($images['items']) ? $images['items'] : [],
-                'qty' => $stock[0]['qty']
+                'images' => $images,
+                'qty' => $stockQty
             ]
         ];
 

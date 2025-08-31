@@ -75,9 +75,15 @@ class Client
     {
         try {
             $json = $this->sendHttpRequest($token, $request);
-        } catch (GuzzleException $e) {
-            $this->logger->exception($e);
-            throw new ClientResponseException(__('Error while receiving response from Allegro API'), $e, $e->getCode());
+        } catch (\Exception $e) {
+            $message = $this->logger->getFullErrorMessage($e);
+            $this->logger->exception($e, $message);
+
+            if($request->getMethod() == MagentoRequest::HTTP_METHOD_PUT) {
+                dd($request->getBody(), $message);
+            }
+
+            throw new ClientResponseException(__($message), $e, $e->getCode());
         }
         $response = $this->json->unserialize($json);
 
@@ -162,7 +168,7 @@ class Client
         $body = $content == 'body' ? $body : $this->json->serialize($body);
         $this->logger->debug('ALLEGRO API HTTP REQUEST ' . $requestId . ': ' . $method . ' ' . $uri . $this->json->serialize($params));
         $response = $this->getResponse($client, $method, $uri, $params);
-        $this->logger->debug('ALLEGRO API HTTP RESPONSE ' . $requestId . ': ' . $response);
+        $this->logger->debug('ALLEGRO API HTTP RESPONSE ' . $requestId . ': ' . $method . ' ' . $uri . ' ' . $response);
 
         return $response;
     }

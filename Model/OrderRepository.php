@@ -43,11 +43,11 @@ class OrderRepository extends \Magento\Sales\Model\OrderRepository implements Or
         Metadata $metadata,
         SearchResultFactory $searchResultFactory,
         ResourceModel $resourceModel,
-        CollectionProcessorInterface $collectionProcessor = null,
-        OrderTaxManagementInterface $orderTaxManagement = null,
-        PaymentAdditionalInfoInterfaceFactory $paymentAdditionalInfoFactory = null,
-        JsonSerializer $serializer = null,
-        OrderExtensionFactory $orderExtensionFactory = null
+        ?CollectionProcessorInterface $collectionProcessor = null,
+        ?OrderTaxManagementInterface $orderTaxManagement = null,
+        ?PaymentAdditionalInfoInterfaceFactory $paymentAdditionalInfoFactory = null,
+        ?JsonSerializer $serializer = null,
+        ?OrderExtensionFactory $orderExtensionFactory = null
     ) {
         $this->resourceModel = $resourceModel;
         $this->orderExtensionFactory = $orderExtensionFactory;

@@ -57,6 +57,7 @@ class OfferRepository implements OfferRepositoryInterface
 
         $offerRawData = $offer->getRawData();
 
+
         try {
 
             if ($offer->getId()) {

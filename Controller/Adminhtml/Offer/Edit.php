@@ -18,6 +18,7 @@ class Edit extends Offer
      */
     public function execute()
     {
+   
         try {
 
             $offerId = $this->getRequest()->getParam('id');

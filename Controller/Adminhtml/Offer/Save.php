@@ -63,6 +63,8 @@ class Save extends Offer
    
         try {
             $data = $this->getRequest()->getParam('allegro');
+
+         
             $data['seller_id'] = $this->credentials->getClientId();
             if (!empty($data['product_id'])) {
                 $offerId = $this->saveProductOffer($data);
@@ -72,11 +74,12 @@ class Save extends Offer
 
             // Fallback to old logic if product_id is not present
             $offer = $this->initializeOffer($data);
+        
             $this->offerRepository->save($offer);
             $offerId = $offer->getId();
 
             $this->handleProductLink($offerId, $data);
-
+          
             if ($offer->isValid()) {
                 $this->messageManager->addSuccessMessage(__('Offer saved successfully'));
             } else {

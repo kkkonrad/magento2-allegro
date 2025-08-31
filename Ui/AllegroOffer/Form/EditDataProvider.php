@@ -16,6 +16,10 @@ use Magento\Framework\View\Element\UiComponent\DataProvider\DataProvider;
 
 class EditDataProvider extends DataProvider
 {
+    /**
+     * @var array
+     */
+    protected $_loadedData = [];
 
     /** @var Categories */
     private $categories;
@@ -27,10 +31,13 @@ class EditDataProvider extends DataProvider
     private $registry;
 
     /**
-     * CreateDataProvider constructor.
+     * EditDataProvider constructor.
      * @param string $name
      * @param string $primaryFieldName
      * @param string $requestFieldName
+     * @param Categories $categories
+     * @param Offers $offers
+     * @param Registry $registry
      * @param ReportingInterface $reporting
      * @param SearchCriteriaBuilder $searchCriteriaBuilder
      * @param RequestInterface $request
@@ -68,28 +75,47 @@ class EditDataProvider extends DataProvider
         $this->registry = $registry;
     }
 
+    /**
+     * Get data
+     *
+     * @return array
+     */
     public function getData()
     {
         \Magento\Framework\Profiler::start(__CLASS__ . '::' . __METHOD__);
-        if (isset($this->_loadedData)) {
+        if (isset($this->_loadedData) && !empty($this->_loadedData)) {
             \Magento\Framework\Profiler::stop(__CLASS__ . '::' . __METHOD__);
             return $this->_loadedData;
         }
 
-        /** @var OfferInterface $offer */
+        /** @var OfferInterface|null $offer */
         $offer = $this->registry->registry('offer');
 
-        /** @var ProductInterface $product */
+        /** @var ProductInterface|null $product */
         $product = $this->registry->registry('product');
 
+        if (!$offer || !$product) {
+            \Magento\Framework\Profiler::stop(__CLASS__ . '::' . __METHOD__);
+            return $this->_loadedData;
+        }
+
         $parameters = [];
-        if (count($offer->getParameters()) > 0) {
-            foreach ($offer->getParameters() as $parameter) {
-                $parameters[$parameter->getId()] = $parameter->getValue();
+        $offerParameters = $offer->getParameters();
+        if ($offerParameters && count($offerParameters) > 0) {
+            foreach ($offerParameters as $parameter) {
+                if ($parameter instanceof ParameterInterface) {
+                    $parameterId = $parameter->getId();
+                    if ($parameterId !== null && !$parameter->isValueEmpty()) {
+                        $rawData = $parameter->getRawData();
+                        if (isset($rawData['value'])) {
+                            $parameters[$parameterId] = $rawData['value'];
+                        }
+                    }
+                }
             }
         }
 
-        $this->_loadedData[$offer['id']] = [
+        $this->_loadedData[$offer->getId()] = [
             'allegro' => [
                 'id' => $offer->getId(),
                 'product' => $product->getId(),
@@ -98,9 +124,9 @@ class EditDataProvider extends DataProvider
                 'description' => $offer->getDescription(),
                 'images' => $offer->getImages(),
                 'delivery_shipping_rates_id' => $offer->getDeliveryShippingRatesId(),
-                'implied_warranty' => $offer->getAfterSalesServices()->getImpliedWarrantyId(),
-                'return_policy' => $offer->getAfterSalesServices()->getReturnPolicyId(),
-                'warranty' => $offer->getAfterSalesServices()->getWarrantyId(),
+                'implied_warranty' => $offer->getAfterSalesServices() ? $offer->getAfterSalesServices()->getImpliedWarrantyId() : null,
+                'return_policy' => $offer->getAfterSalesServices() ? $offer->getAfterSalesServices()->getReturnPolicyId() : null,
+                'warranty' => $offer->getAfterSalesServices() ? $offer->getAfterSalesServices()->getWarrantyId() : null,
                 'delivery_handling_time' => $offer->getDeliveryHandlingTime(),
                 'payments_invoice' => $offer->getPaymentsInvoice(),
                 'price' => $offer->getPrice(),

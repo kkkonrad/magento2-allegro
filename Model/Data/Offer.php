@@ -375,6 +375,7 @@ class Offer extends DataObject implements OfferInterface
      */
     public function setRawData(array $rawData)
     {
+
         if (isset($rawData['id'])) {
             $this->setId($rawData['id']);
         }
@@ -443,6 +444,7 @@ class Offer extends DataObject implements OfferInterface
             ],
             'compatibilityList' => null,
             'images' => $this->mapImages($this->getImages()),
+            'language' => 'pl-PL',
             'sellingMode' => [
                 'format' => 'BUY_NOW',
                 'price' => [
@@ -467,12 +469,13 @@ class Offer extends DataObject implements OfferInterface
                 'invoice' => $this->getPaymentsInvoice()
             ],
             'afterSalesServices' => $this->mapAfterSalesServices($this->getAfterSalesServices())
+            
         ];
 
         if ($this->getEan() != '') {
             $rawData['ean'] = $this->getEan();
         }
-
+     
         return $rawData;
     }
 

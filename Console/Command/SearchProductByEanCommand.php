@@ -37,7 +37,7 @@ class SearchProductByEanCommand extends Command
      */
     protected function configure()
     {
-        $this->setName('allegro:product:search')
+        $this->setName('macopedia:allegro:product:search')
             ->setDescription('Search for a product in Allegro Catalog by EAN')
             ->addArgument(
                 self::EAN_ARGUMENT,
@@ -66,7 +66,6 @@ class SearchProductByEanCommand extends Command
                 return \Magento\Framework\Console\Cli::RETURN_FAILURE;
             }
 
-            dd($products);
 
             $product = array_shift($products);
             $output->writeln("<info>Product found!</info>");

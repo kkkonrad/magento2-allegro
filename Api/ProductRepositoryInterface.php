@@ -19,7 +19,7 @@ interface ProductRepositoryInterface extends \Magento\Catalog\Api\ProductReposit
     public function getByAllegroOfferId(
         int $allegroOfferId,
         bool $editMode = false,
-        int $storeId = null,
+        ?int $storeId = null,
         bool $forceReload = false
     ): ProductInterface;
 }

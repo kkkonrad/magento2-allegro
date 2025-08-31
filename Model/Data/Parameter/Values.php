@@ -14,7 +14,7 @@ class Values extends Parameter implements ValuesInterface
      * @param string[] $value
      * @return void
      */
-    public function setValue(array $value)
+    public function setValue($value)
     {
         $this->setData(self::VALUE_FIELD_NAME, $this->stripEmptyValues($value));
     }
@@ -22,7 +22,7 @@ class Values extends Parameter implements ValuesInterface
     /**
      * @return string[]
      */
-    public function getValue(): array
+    public function getValue()
     {
         return $this->getData(self::VALUE_FIELD_NAME);
     }
