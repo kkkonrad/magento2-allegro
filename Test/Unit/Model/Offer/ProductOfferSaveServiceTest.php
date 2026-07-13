@@ -13,6 +13,7 @@ use Macopedia\Allegro\Model\Api\ProductOfferFactory;
 use Macopedia\Allegro\Model\Data\ProductOffer;
 use Macopedia\Allegro\Model\Offer\OfferFormDataMapper;
 use Macopedia\Allegro\Model\Offer\OfferSaveRequest;
+use Macopedia\Allegro\Model\Offer\OfferSaveRequestValidator;
 use Macopedia\Allegro\Model\Offer\ProductOfferSaveService;
 use Macopedia\Allegro\Model\OfferMappingService;
 use PHPUnit\Framework\TestCase;
@@ -36,6 +37,10 @@ class ProductOfferSaveServiceTest extends TestCase
             ['city' => 'Poznań', 'countryCode' => 'PL', 'postCode' => '60-001'],
             [],
             null,
+            [],
+            [],
+            [],
+            [],
             []
         ));
 
@@ -63,7 +68,8 @@ class ProductOfferSaveServiceTest extends TestCase
             $repository,
             $mapping,
             $credentials,
-            $this->createMock(Logger::class)
+            $this->createMock(Logger::class),
+            $this->createMock(OfferSaveRequestValidator::class)
         );
 
         $result = $service->execute([]);

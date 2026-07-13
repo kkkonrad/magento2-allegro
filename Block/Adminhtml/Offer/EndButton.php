@@ -3,6 +3,7 @@
 namespace Macopedia\Allegro\Block\Adminhtml\Offer;
 
 use Macopedia\Allegro\Api\Data\OfferInterface;
+use Macopedia\Allegro\Api\Data\ProductOfferInterface;
 use Magento\Framework\View\Element\UiComponent\Control\ButtonProviderInterface;
 
 /**
@@ -43,10 +44,15 @@ class EndButton implements ButtonProviderInterface
      */
     public function getButtonData()
     {
+        $offer = $this->getOffer();
+        $canEnd = $offer instanceof ProductOfferInterface
+            ? $offer->getStatus() === 'ACTIVE'
+            : $offer->canBeEnded();
+
         return [
             'label' => __('End offer'),
             'class' => 'action-secondary',
-            'disabled' => !$this->getOffer()->canBeEnded(),
+            'disabled' => !$canEnd,
             'on_click' => $this->getOnclick(),
             'sort_order' => 10,
         ];
@@ -64,7 +70,7 @@ class EndButton implements ButtonProviderInterface
     }
 
     /**
-     * @return OfferInterface
+     * @return OfferInterface|ProductOfferInterface
      */
     private function getOffer()
     {

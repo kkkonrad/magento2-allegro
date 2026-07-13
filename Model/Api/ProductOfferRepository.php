@@ -251,6 +251,19 @@ class ProductOfferRepository implements ProductOfferRepositoryInterface
         if (!empty($data['attachments']) && is_array($data['attachments'])) {
             $productOffer->setAttachments($data['attachments']);
         }
+        $productSetItem = is_array($data['productSet'][0] ?? null) ? $data['productSet'][0] : [];
+        if (!empty($productSetItem['responsibleProducer']) && is_array($productSetItem['responsibleProducer'])) {
+            $productOffer->setResponsibleProducer($productSetItem['responsibleProducer']);
+        }
+        if (!empty($productSetItem['responsiblePerson']) && is_array($productSetItem['responsiblePerson'])) {
+            $productOffer->setResponsiblePerson($productSetItem['responsiblePerson']);
+        }
+        if (!empty($productSetItem['safetyInformation']) && is_array($productSetItem['safetyInformation'])) {
+            $productOffer->setSafetyInformation($productSetItem['safetyInformation']);
+        }
+        if (!empty($data['taxSettings']) && is_array($data['taxSettings'])) {
+            $productOffer->setTaxSettings($data['taxSettings']);
+        }
         $productOffer->setValidationErrors(
             $this->mapValidationMessages((array)($data['validation']['errors'] ?? []))
         );

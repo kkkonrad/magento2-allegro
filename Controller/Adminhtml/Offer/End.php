@@ -3,10 +3,14 @@
 namespace Macopedia\Allegro\Controller\Adminhtml\Offer;
 
 use Macopedia\Allegro\Api\Data\PublicationCommandInterface;
+use Macopedia\Allegro\Api\ProductOfferRepositoryInterface;
 use Macopedia\Allegro\Controller\Adminhtml\Offer;
+use Macopedia\Allegro\Controller\Adminhtml\Offer\Context as OfferContext;
+use Magento\Backend\App\Action\Context;
 use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\App\ResponseInterface;
 use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 
 /**
  * Save controller class
@@ -14,6 +18,18 @@ use Magento\Framework\Exception\LocalizedException;
 class End extends Offer
 {
     public const ADMIN_RESOURCE = 'Macopedia_Allegro::offer_publish';
+
+    /** @var ProductOfferRepositoryInterface */
+    private $productOfferRepository;
+
+    public function __construct(
+        Context $context,
+        OfferContext $offerContext,
+        ProductOfferRepositoryInterface $productOfferRepository
+    ) {
+        parent::__construct($context, $offerContext);
+        $this->productOfferRepository = $productOfferRepository;
+    }
 
     /**
      * @return ResultInterface|ResponseInterface
@@ -28,9 +44,16 @@ class End extends Offer
                 throw new LocalizedException(__('Requested offer does not exists'));
             }
 
-            $offer = $this->offerRepository->get($offerId);
-            if (!$offer->canBeEnded()) {
-                throw new LocalizedException(__('Can not end inactive or ended offers'));
+            try {
+                $offer = $this->productOfferRepository->get((string)$offerId);
+                if ($offer->getStatus() !== 'ACTIVE') {
+                    throw new LocalizedException(__('Can not end inactive or ended offers'));
+                }
+            } catch (NoSuchEntityException $exception) {
+                $offer = $this->offerRepository->get($offerId);
+                if (!$offer->canBeEnded()) {
+                    throw new LocalizedException(__('Can not end inactive or ended offers'));
+                }
             }
 
             /** @var PublicationCommandInterface $publicationCommand */

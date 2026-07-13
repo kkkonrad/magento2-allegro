@@ -4,7 +4,7 @@
 
 - Magento 2.4.8-p5: `setup:upgrade`, `setup:db:status` i `setup:di:compile` zakończone sukcesem.
 - PHP 8.2: lint całego modułu oraz `git diff --check` bez błędów.
-- PHPUnit: 38 testów jednostkowych, 86 asercji, wynik PASS.
+- PHPUnit: 48 testów jednostkowych, 127 asercji, wynik PASS.
 - Zarejestrowane konsumery dla MySQL MQ i RabbitMQ: stan/cena, status zamówienia, przesyłka.
 - Rejestr retry ma backoff, limit pięciu prób, status `dead`, komunikat systemowy i komendę diagnostyczną.
 - Brak martwych operacji asynchronicznych w aktualnym środowisku: `macopedia:allegro:async-failures --limit=10`.
@@ -22,6 +22,10 @@
 Aktualizacja draftu przez `PATCH /sale/product-offers/7781864283` zakończyła się sukcesem: cena zmieniła się z `10` na `11`, a status pozostał `INACTIVE`.
 
 Ponowny odczyt draftu zwrócił 10 błędów `validation.errors`. Moduł mapuje preferowane komunikaty `userMessage` wraz ze ścieżką pola, pokazuje ostrzeżenie po zapisie i blokuje publikację przed wysłaniem komendy aktywacji. Test blokady dla `7781864283` zakończył się wynikiem `blocked=true`, `command_sent=false`. Akcja publikacji korzysta teraz z Product Offer API i zachowuje fallback dla ofert utworzonych przez starszy endpoint.
+
+Po wdrożeniu obsługi `taxSettings` i `productSet[].safetyInformation` draft zaktualizowano bez publikacji. Allegro zaakceptowało VAT `23.00`, fakturę `VAT`, ilość `0` dla One Fulfillment oraz tekst bezpieczeństwa. Liczba błędów walidacji spadła z 10 do 7. Pozostały błędy zależne od danych i konfiguracji konta: GTIN/GS1, brak marki w produkcie katalogowym, brak warunków zwrotów i reklamacji, brak responsible producer oraz nieaktywna konfiguracja One Fulfillment.
+
+Formularz i backend obsługują obecnie responsible producer, responsible person, tekst bezpieczeństwa i VAT. Backend sprawdza istnienie wpisów GPSR w słownikach konta, dostępność cennika, zgodność VAT z kategorią, zasady One Fulfillment oraz usuwa parametry `describesProduct=true`. Na koncie testowym listy responsible producers, responsible persons i after-sales services nadal są puste, dlatego moduł nie może samodzielnie uzupełnić tych danych biznesowych.
 
 Test wykrył i pozwolił poprawić dwa błędy payloadu:
 

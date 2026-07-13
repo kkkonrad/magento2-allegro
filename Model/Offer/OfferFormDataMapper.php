@@ -47,13 +47,18 @@ class OfferFormDataMapper
             throw new LocalizedException(__('Offer quantity must be a non-negative integer.'));
         }
 
+        $categoryId = $this->scalar($data, 'category');
+        if ($categoryId === '' || !ctype_digit($categoryId)) {
+            throw new LocalizedException(__('A valid Allegro category ID is required.'));
+        }
+
         return new OfferSaveRequest(
             $magentoProductId,
             $catalogProductId,
             $this->scalar($data, 'name'),
             (float)$price,
             (int)$quantity,
-            $this->scalar($data, 'category'),
+            $categoryId,
             is_array($data['parameters'] ?? null) ? $data['parameters'] : [],
             $this->scalar($data, 'delivery_shipping_rates_id'),
             $this->scalar($data, 'delivery_handling_time'),
@@ -61,7 +66,11 @@ class OfferFormDataMapper
             $this->location(),
             is_array($data['images'] ?? null) ? $data['images'] : [],
             $this->nullableScalar($data, 'description'),
-            $this->afterSalesServices($data)
+            $this->afterSalesServices($data),
+            $this->responsibleProducer($data),
+            $this->responsiblePerson($data),
+            $this->safetyInformation($data),
+            $this->taxSettings($data)
         );
     }
 
@@ -90,6 +99,75 @@ class OfferFormDataMapper
         }
 
         return $services;
+    }
+
+    private function responsibleProducer(array $data): array
+    {
+        $id = $this->scalar($data, 'responsible_producer_id');
+        if ($id !== '') {
+            return ['type' => 'ID', 'id' => $id];
+        }
+
+        $name = $this->scalar($data, 'responsible_producer_name');
+        return $name !== '' ? ['type' => 'NAME', 'name' => $name] : [];
+    }
+
+    private function responsiblePerson(array $data): array
+    {
+        $id = $this->scalar($data, 'responsible_person_id');
+        if ($id !== '') {
+            return ['id' => $id];
+        }
+
+        $name = $this->scalar($data, 'responsible_person_name');
+        return $name !== '' ? ['name' => $name] : [];
+    }
+
+    /**
+     * @throws LocalizedException
+     */
+    private function safetyInformation(array $data): array
+    {
+        $description = $this->scalar($data, 'safety_information');
+        if ($description === '') {
+            return [];
+        }
+        if ($description !== strip_tags($description)) {
+            throw new LocalizedException(__('Product safety information cannot contain HTML.'));
+        }
+        if (mb_strlen($description) > 5000) {
+            throw new LocalizedException(__('Product safety information cannot exceed 5000 characters.'));
+        }
+
+        return ['type' => 'TEXT', 'description' => $description];
+    }
+
+    /**
+     * @throws LocalizedException
+     */
+    private function taxSettings(array $data): array
+    {
+        $rate = $this->scalar($data, 'tax_rate');
+        if ($rate === '') {
+            return [];
+        }
+        if (!preg_match('/^(?:100(?:\.0{1,2})?|\d{1,2}(?:\.\d{1,2})?)$/', $rate)) {
+            throw new LocalizedException(__('VAT rate must be a number between 0 and 100 with at most two decimal places.'));
+        }
+
+        $settings = [
+            'subject' => $this->scalar($data, 'tax_subject') ?: 'GOODS',
+            'rates' => [[
+                'rate' => number_format((float)$rate, 2, '.', ''),
+                'countryCode' => (string)$this->scopeConfig->getValue('allegro/origin/country_id'),
+            ]],
+        ];
+        $exemption = $this->scalar($data, 'tax_exemption');
+        if ($exemption !== '') {
+            $settings['exemption'] = $exemption;
+        }
+
+        return $settings;
     }
 
     private function scalar(array $data, string $key): string

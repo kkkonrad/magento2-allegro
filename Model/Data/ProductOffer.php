@@ -129,6 +129,46 @@ class ProductOffer extends DataObject implements ProductOfferInterface
         return $this->setData('validation_warnings', $warnings);
     }
 
+    public function getResponsibleProducer(): array
+    {
+        return $this->getData('responsible_producer') ?? [];
+    }
+
+    public function setResponsibleProducer(array $responsibleProducer): self
+    {
+        return $this->setData('responsible_producer', $responsibleProducer);
+    }
+
+    public function getResponsiblePerson(): array
+    {
+        return $this->getData('responsible_person') ?? [];
+    }
+
+    public function setResponsiblePerson(array $responsiblePerson): self
+    {
+        return $this->setData('responsible_person', $responsiblePerson);
+    }
+
+    public function getSafetyInformation(): array
+    {
+        return $this->getData('safety_information') ?? [];
+    }
+
+    public function setSafetyInformation(array $safetyInformation): self
+    {
+        return $this->setData('safety_information', $safetyInformation);
+    }
+
+    public function getTaxSettings(): array
+    {
+        return $this->getData('tax_settings') ?? [];
+    }
+
+    public function setTaxSettings(array $taxSettings): self
+    {
+        return $this->setData('tax_settings', $taxSettings);
+    }
+
     /**
      * @return array
      */

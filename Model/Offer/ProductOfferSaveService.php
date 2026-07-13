@@ -40,6 +40,9 @@ class ProductOfferSaveService
     /** @var Logger */
     private $logger;
 
+    /** @var OfferSaveRequestValidator */
+    private $requestValidator;
+
     public function __construct(
         OfferFormDataMapper $mapper,
         ProductOfferFactory $productOfferFactory,
@@ -48,7 +51,8 @@ class ProductOfferSaveService
         ProductOfferRepositoryInterface $productOfferRepository,
         OfferMappingService $offerMappingService,
         Credentials $credentials,
-        Logger $logger
+        Logger $logger,
+        OfferSaveRequestValidator $requestValidator
     ) {
         $this->mapper = $mapper;
         $this->productOfferFactory = $productOfferFactory;
@@ -58,6 +62,7 @@ class ProductOfferSaveService
         $this->offerMappingService = $offerMappingService;
         $this->credentials = $credentials;
         $this->logger = $logger;
+        $this->requestValidator = $requestValidator;
     }
 
     /**
@@ -72,6 +77,7 @@ class ProductOfferSaveService
     public function execute(array $formData): array
     {
         $request = $this->mapper->map($formData);
+        $this->requestValidator->validate($request);
         $offer = $this->productOfferFactory->create();
         $isUpdate = isset($formData['id'])
             && is_scalar($formData['id'])
@@ -98,6 +104,10 @@ class ProductOfferSaveService
             ->setPayments(['invoice' => $request->invoice])
             ->setImages($this->uploadImages($request->images))
             ->setAfterSalesServices($request->afterSalesServices)
+            ->setResponsibleProducer($request->responsibleProducer)
+            ->setResponsiblePerson($request->responsiblePerson)
+            ->setSafetyInformation($request->safetyInformation)
+            ->setTaxSettings($request->taxSettings)
             ->setExternalId('magento-product-' . $request->magentoProductId);
 
         if (!$isUpdate) {

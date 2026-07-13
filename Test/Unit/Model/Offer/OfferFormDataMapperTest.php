@@ -39,6 +39,10 @@ class OfferFormDataMapperTest extends TestCase
             'delivery_handling_time' => 'PT24H',
             'payments_invoice' => 'VAT',
             'return_policy' => 'return-id',
+            'responsible_producer_id' => 'producer-id',
+            'responsible_person_name' => 'EU representative',
+            'safety_information' => "Keep away from fire.\nRead the manual.",
+            'tax_rate' => '23',
             'description' => 'Description',
         ]);
 
@@ -49,6 +53,10 @@ class OfferFormDataMapperTest extends TestCase
         self::assertSame('rate-id', $request->shippingRateId);
         self::assertSame('PT24H', $request->handlingTime);
         self::assertSame(['returnPolicy' => ['id' => 'return-id']], $request->afterSalesServices);
+        self::assertSame(['type' => 'ID', 'id' => 'producer-id'], $request->responsibleProducer);
+        self::assertSame(['name' => 'EU representative'], $request->responsiblePerson);
+        self::assertSame('TEXT', $request->safetyInformation['type']);
+        self::assertSame('23.00', $request->taxSettings['rates'][0]['rate']);
         self::assertSame('Poznań', $request->location['city']);
     }
 
@@ -65,6 +73,7 @@ class OfferFormDataMapperTest extends TestCase
             'ean' => '5901234123457',
             'price' => '10.00',
             'qty' => 1,
+            'category' => '123',
         ], $changes);
 
         $this->expectException(LocalizedException::class);
@@ -81,6 +90,7 @@ class OfferFormDataMapperTest extends TestCase
             'ean' => '',
             'price' => '10.00',
             'qty' => 1,
+            'category' => '123',
         ]);
 
         self::assertSame('catalog-id', $request->catalogProductId);

@@ -6,7 +6,6 @@ use Macopedia\Allegro\Api\Data\ShippingRateInterface;
 use Macopedia\Allegro\Api\Data\ShippingRateInterfaceFactory;
 use Macopedia\Allegro\Api\ShippingRateRepositoryInterface;
 use Macopedia\Allegro\Model\Api\ClientException;
-use Macopedia\Allegro\Model\Api\ClientResponseException;
 use Macopedia\Allegro\Model\ResourceModel\Sale\ShippingRates;
 
 class ShippingRateRepository implements ShippingRateRepositoryInterface
@@ -35,13 +34,7 @@ class ShippingRateRepository implements ShippingRateRepositoryInterface
      */
     public function getList(): array
     {
-        try {
-
-            $shippingRatesData = $this->shippingRates->getList();
-
-        } catch (ClientResponseException $e) {
-            return [];
-        }
+        $shippingRatesData = $this->shippingRates->getList();
 
         $shippingRates = [];
         foreach ($shippingRatesData as $shippingRateData) {

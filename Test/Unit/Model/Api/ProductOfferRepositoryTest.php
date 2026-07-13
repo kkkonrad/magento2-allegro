@@ -60,6 +60,16 @@ class ProductOfferRepositoryTest extends TestCase
         $resource = $this->createMock(AbstractResource::class);
         $resource->method('requestGet')->willReturn([
             'id' => 'offer-1',
+            'productSet' => [[
+                'product' => ['id' => 'catalog-id'],
+                'responsibleProducer' => ['id' => 'producer-id'],
+                'responsiblePerson' => ['id' => 'person-id'],
+                'safetyInformation' => ['type' => 'TEXT', 'description' => 'Safety text'],
+            ]],
+            'taxSettings' => [
+                'subject' => 'GOODS',
+                'rates' => [['countryCode' => 'PL', 'rate' => '23.00']],
+            ],
             'validation' => [
                 'errors' => [
                     [
@@ -83,6 +93,10 @@ class ProductOfferRepositoryTest extends TestCase
             $offer->getValidationErrors()
         );
         self::assertSame(['[description] Sprawdź opis.'], $offer->getValidationWarnings());
+        self::assertSame('producer-id', $offer->getResponsibleProducer()['id']);
+        self::assertSame('person-id', $offer->getResponsiblePerson()['id']);
+        self::assertSame('Safety text', $offer->getSafetyInformation()['description']);
+        self::assertSame('23.00', $offer->getTaxSettings()['rates'][0]['rate']);
     }
 
     public function testGetMapsNotFoundResponseToNoSuchEntityException(): void

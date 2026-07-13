@@ -223,4 +223,20 @@ interface ProductOfferInterface
      * @return $this
      */
     public function setValidationWarnings(array $warnings): self;
+
+    public function getResponsibleProducer(): array;
+
+    public function setResponsibleProducer(array $responsibleProducer): self;
+
+    public function getResponsiblePerson(): array;
+
+    public function setResponsiblePerson(array $responsiblePerson): self;
+
+    public function getSafetyInformation(): array;
+
+    public function setSafetyInformation(array $safetyInformation): self;
+
+    public function getTaxSettings(): array;
+
+    public function setTaxSettings(array $taxSettings): self;
 }

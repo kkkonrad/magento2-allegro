@@ -3,6 +3,7 @@
 namespace Macopedia\Allegro\Block\Adminhtml\Offer;
 
 use Macopedia\Allegro\Api\Data\OfferInterface;
+use Macopedia\Allegro\Api\Data\ProductOfferInterface;
 use Magento\Framework\View\Element\UiComponent\Control\ButtonProviderInterface;
 
 /**
@@ -43,9 +44,14 @@ class PublishButton implements ButtonProviderInterface
      */
     public function getButtonData()
     {
+        $offer = $this->getOffer();
+        $canPublish = $offer instanceof ProductOfferInterface
+            ? !$offer->getValidationErrors() && in_array($offer->getStatus(), ['INACTIVE', 'ENDED'], true)
+            : $offer->canBePublished() && $offer->isValid();
+
         return [
             'label' => $this->getLabel(),
-            'disabled' => !($this->getOffer()->canBePublished() && $this->getOffer()->isValid()),
+            'disabled' => !$canPublish,
             'class' => 'action-secondary',
             'on_click' => $this->getOnclick(),
             'sort_order' => 10,
@@ -57,7 +63,11 @@ class PublishButton implements ButtonProviderInterface
      */
     protected function getLabel()
     {
-        if ($this->getOffer()->getPublicationStatus() === OfferInterface::PUBLICATION_STATUS_ENDED) {
+        $offer = $this->getOffer();
+        $status = $offer instanceof ProductOfferInterface
+            ? $offer->getStatus()
+            : $offer->getPublicationStatus();
+        if ($status === OfferInterface::PUBLICATION_STATUS_ENDED) {
             return __('Resume offer');
         }
         return __('Publish offer');
@@ -75,7 +85,7 @@ class PublishButton implements ButtonProviderInterface
     }
 
     /**
-     * @return OfferInterface
+     * @return OfferInterface|ProductOfferInterface
      */
     private function getOffer()
     {

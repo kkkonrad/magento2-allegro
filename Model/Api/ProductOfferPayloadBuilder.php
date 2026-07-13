@@ -26,11 +26,22 @@ class ProductOfferPayloadBuilder
         $this->validator->validate($offer);
 
         $deliveryOptions = $offer->getDeliveryOptions();
+        $productSetItem = [
+            'product' => ['id' => $offer->getProductId()],
+        ];
+        if ($offer->getResponsibleProducer()) {
+            $productSetItem['responsibleProducer'] = $offer->getResponsibleProducer();
+        }
+        if ($offer->getResponsiblePerson()) {
+            $productSetItem['responsiblePerson'] = $offer->getResponsiblePerson();
+        }
+        if ($offer->getSafetyInformation()) {
+            $productSetItem['safetyInformation'] = $offer->getSafetyInformation();
+        }
+
         $payload = [
             'name' => trim((string)$offer->getName()),
-            'productSet' => [[
-                'product' => ['id' => $offer->getProductId()],
-            ]],
+            'productSet' => [$productSetItem],
             'sellingMode' => $offer->getSellingMode(),
             'stock' => [
                 'available' => $offer->getQuantity(),
@@ -68,6 +79,10 @@ class ProductOfferPayloadBuilder
 
         if ($offer->getAfterSalesServices()) {
             $payload['afterSalesServices'] = $offer->getAfterSalesServices();
+        }
+
+        if ($offer->getTaxSettings()) {
+            $payload['taxSettings'] = $offer->getTaxSettings();
         }
 
         if ($offer->getAttachments()) {

@@ -209,6 +209,85 @@
                 </item>
             </argument>
         </field>
+        <field name="responsible_producer_id">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="label" xsi:type="string" translate="true">Responsible producer ID</item>
+                    <item name="notice" xsi:type="string" translate="true">Use an ID from Allegro responsible producers. Leave empty only when Allegro Catalog already provides GPSR data.</item>
+                </item>
+            </argument>
+        </field>
+        <field name="responsible_producer_name">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="label" xsi:type="string" translate="true">Responsible producer name</item>
+                    <item name="notice" xsi:type="string" translate="true">Alternative to the producer ID. The name must already exist in the Allegro producer dictionary.</item>
+                </item>
+            </argument>
+        </field>
+        <field name="responsible_person_id">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="label" xsi:type="string" translate="true">Responsible person ID</item>
+                    <item name="notice" xsi:type="string" translate="true">Required when the producer is established outside the European Union.</item>
+                </item>
+            </argument>
+        </field>
+        <field name="responsible_person_name">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="label" xsi:type="string" translate="true">Responsible person name</item>
+                    <item name="notice" xsi:type="string" translate="true">Alternative to the responsible person ID.</item>
+                </item>
+            </argument>
+        </field>
+        <field name="safety_information">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">textarea</item>
+                    <item name="label" xsi:type="string" translate="true">Product safety information</item>
+                    <item name="rows" xsi:type="number">5</item>
+                    <item name="notice" xsi:type="string" translate="true">Plain text, 1–5000 characters. Leave empty only when the catalog product already contains safety information.</item>
+                    <item name="validation" xsi:type="array">
+                        <item name="max_text_length" xsi:type="number">5000</item>
+                    </item>
+                </item>
+            </argument>
+        </field>
+        <field name="tax_rate">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="label" xsi:type="string" translate="true">VAT rate</item>
+                    <item name="default" xsi:type="string">23.00</item>
+                    <item name="notice" xsi:type="string" translate="true">The rate must be supported by Allegro for the selected category and origin country.</item>
+                    <item name="validation" xsi:type="array">
+                        <item name="validate-number" xsi:type="boolean">true</item>
+                        <item name="validate-zero-or-greater" xsi:type="boolean">true</item>
+                    </item>
+                </item>
+            </argument>
+        </field>
+        <field name="tax_subject">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="visible" xsi:type="boolean">false</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="default" xsi:type="string">GOODS</item>
+                </item>
+            </argument>
+        </field>
         <field name="delivery_handling_time">
             <argument name="data" xsi:type="array">
                 <item name="options" xsi:type="object">Macopedia\Allegro\Model\Config\Source\HandlingTime</item>

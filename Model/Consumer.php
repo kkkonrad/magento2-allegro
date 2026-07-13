@@ -8,6 +8,7 @@ use Macopedia\Allegro\Api\Data\PublicationCommandInterface;
 use Macopedia\Allegro\Api\Data\PublicationCommandInterfaceFactory;
 use Macopedia\Allegro\Api\OfferRepositoryInterface;
 use Macopedia\Allegro\Api\PriceCommandInterface;
+use Macopedia\Allegro\Api\ProductOfferRepositoryInterface;
 use Macopedia\Allegro\Api\PublicationCommandRepositoryInterface;
 use Macopedia\Allegro\Api\QuantityCommandInterface;
 use Macopedia\Allegro\Logger\Logger;
@@ -16,6 +17,7 @@ use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\CatalogInventory\Model\Indexer\Stock\Processor;
 use Magento\Framework\Exception\CouldNotSaveException;
 use Magento\Framework\Lock\LockManagerInterface;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\InventorySalesAdminUi\Model\GetSalableQuantityDataBySku;
 
 /**
@@ -67,6 +69,9 @@ class Consumer implements ConsumerInterface
     /** @var AsyncFailureRepository */
     private $asyncFailureRepository;
 
+    /** @var ProductOfferRepositoryInterface */
+    private $productOfferRepository;
+
     /**
      * Consumer constructor.
      * @param Logger $logger
@@ -98,7 +103,8 @@ class Consumer implements ConsumerInterface
         AllegroPrice $allegroPrice,
         LockManagerInterface $lockManager,
         OfferSyncState $offerSyncState,
-        AsyncFailureRepository $asyncFailureRepository
+        AsyncFailureRepository $asyncFailureRepository,
+        ProductOfferRepositoryInterface $productOfferRepository
     ) {
         $this->logger = $logger;
         $this->productRepository = $productRepository;
@@ -114,6 +120,7 @@ class Consumer implements ConsumerInterface
         $this->lockManager = $lockManager;
         $this->offerSyncState = $offerSyncState;
         $this->asyncFailureRepository = $asyncFailureRepository;
+        $this->productOfferRepository = $productOfferRepository;
     }
 
     /**
@@ -169,10 +176,15 @@ class Consumer implements ConsumerInterface
                     $this->priceCommand->change($allegroOfferId, $price);
                 }
 
-                $offer = $this->offerRepository->get($allegroOfferId);
+                try {
+                    $productOffer = $this->productOfferRepository->get((string)$allegroOfferId);
+                    $isDraft = $productOffer->getStatus() === 'INACTIVE';
+                } catch (NoSuchEntityException $exception) {
+                    $isDraft = $this->offerRepository->get($allegroOfferId)->isDraft();
+                }
                 if ($qty > 0) {
                     $this->quantityCommand->change($allegroOfferId, $qty);
-                    if (!$offer->isDraft()) {
+                    if (!$isDraft) {
                         $this->savePublicationCommand(
                             $allegroOfferId,
                             PublicationCommandInterface::ACTION_ACTIVATE

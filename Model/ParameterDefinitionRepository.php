@@ -7,7 +7,6 @@ use Macopedia\Allegro\Api\Data\ParameterDefinitionInterfaceFactory;
 use Macopedia\Allegro\Api\Data\ParameterInterface;
 use Macopedia\Allegro\Api\Data\ParameterInterfaceFactoryInterface;
 use Macopedia\Allegro\Api\ParameterDefinitionRepositoryInterface;
-use Macopedia\Allegro\Model\Api\ClientResponseException;
 use Macopedia\Allegro\Model\ResourceModel\Sale\Categories;
 use Macopedia\Allegro\Model\Api\ClientException;
 
@@ -46,13 +45,7 @@ class ParameterDefinitionRepository implements ParameterDefinitionRepositoryInte
      */
     public function getListByCategoryId(int $categoryId): array
     {
-        try {
-
-            $parametersData = $this->categories->getParameters($categoryId);
-
-        } catch (ClientResponseException $e) {
-            return [];
-        }
+        $parametersData = $this->categories->getParameters($categoryId);
 
         $parameters = [];
         foreach ($parametersData as $parameterDefinitionData) {

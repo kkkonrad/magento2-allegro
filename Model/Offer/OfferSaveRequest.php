@@ -20,6 +20,10 @@ final class OfferSaveRequest
     public array $images;
     public ?string $description;
     public array $afterSalesServices;
+    public array $responsibleProducer;
+    public array $responsiblePerson;
+    public array $safetyInformation;
+    public array $taxSettings;
 
     public function __construct(
         int $magentoProductId,
@@ -35,7 +39,11 @@ final class OfferSaveRequest
         array $location,
         array $images,
         ?string $description,
-        array $afterSalesServices
+        array $afterSalesServices,
+        array $responsibleProducer,
+        array $responsiblePerson,
+        array $safetyInformation,
+        array $taxSettings
     ) {
         $this->magentoProductId = $magentoProductId;
         $this->catalogProductId = $catalogProductId;
@@ -51,5 +59,9 @@ final class OfferSaveRequest
         $this->images = $images;
         $this->description = $description;
         $this->afterSalesServices = $afterSalesServices;
+        $this->responsibleProducer = $responsibleProducer;
+        $this->responsiblePerson = $responsiblePerson;
+        $this->safetyInformation = $safetyInformation;
+        $this->taxSettings = $taxSettings;
     }
 }

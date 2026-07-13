@@ -6,7 +6,6 @@ use Macopedia\Allegro\Api\Data\ImpliedWarrantyInterface;
 use Macopedia\Allegro\Api\Data\ImpliedWarrantyInterfaceFactory;
 use Macopedia\Allegro\Api\ImpliedWarrantyRepositoryInterface;
 use Macopedia\Allegro\Model\Api\ClientException;
-use Macopedia\Allegro\Model\Api\ClientResponseException;
 use Macopedia\Allegro\Model\ResourceModel\Sale\AfterSaleServices;
 
 class ImpliedWarrantyRepository implements ImpliedWarrantyRepositoryInterface
@@ -37,13 +36,7 @@ class ImpliedWarrantyRepository implements ImpliedWarrantyRepositoryInterface
      */
     public function getList(): array
     {
-        try {
-
-            $impliedWarrantiesData = $this->afterSaleServices->getImpliedWarrantiesList();
-
-        } catch (ClientResponseException $e) {
-            return [];
-        }
+        $impliedWarrantiesData = $this->afterSaleServices->getImpliedWarrantiesList();
 
         $impliedWarranties = [];
         foreach ($impliedWarrantiesData as $impliedWarrantyData) {

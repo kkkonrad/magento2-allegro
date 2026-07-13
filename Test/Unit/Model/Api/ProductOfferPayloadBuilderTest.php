@@ -43,11 +43,22 @@ class ProductOfferPayloadBuilderTest extends TestCase
             'returnPolicy' => ['id' => 'return-id'],
         ]);
         $offer->setExternalId('magento-product-10');
+        $offer->setResponsibleProducer(['type' => 'ID', 'id' => 'producer-id']);
+        $offer->setResponsiblePerson(['id' => 'person-id']);
+        $offer->setSafetyInformation(['type' => 'TEXT', 'description' => 'Keep away from fire.']);
+        $offer->setTaxSettings([
+            'subject' => 'GOODS',
+            'rates' => [['rate' => '23.00', 'countryCode' => 'PL']],
+        ]);
 
         $payload = $this->builder->build($offer);
 
         self::assertSame('pl-PL', $payload['language']);
         self::assertSame('catalog-product-id', $payload['productSet'][0]['product']['id']);
+        self::assertSame('producer-id', $payload['productSet'][0]['responsibleProducer']['id']);
+        self::assertSame('person-id', $payload['productSet'][0]['responsiblePerson']['id']);
+        self::assertSame('TEXT', $payload['productSet'][0]['safetyInformation']['type']);
+        self::assertSame('23.00', $payload['taxSettings']['rates'][0]['rate']);
         self::assertSame(0, $payload['stock']['available']);
         self::assertSame('shipping-rate-id', $payload['delivery']['shippingRates']['id']);
         self::assertSame('PT24H', $payload['delivery']['handlingTime']);

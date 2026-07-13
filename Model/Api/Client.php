@@ -332,7 +332,7 @@ class Client
             return false;
         }
 
-        if (!in_array(strtoupper($method), ['GET', 'PUT', 'DELETE'], true)) {
+        if (!in_array(strtoupper($method), ['GET', 'PUT', 'PATCH', 'DELETE'], true)) {
             return false;
         }
 
