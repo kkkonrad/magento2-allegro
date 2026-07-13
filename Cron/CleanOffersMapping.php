@@ -43,7 +43,9 @@ class CleanOffersMapping
             try {
                 $this->offersMapping->clean();
             } catch (\Exception $e) {
-                $this->logger->error('Error while trying to clean old offers mapping: ' . $e->getMessage());
+                $this->logger->apiFailure('Could not clean old Allegro offer mappings', [
+                    'exception_type' => get_class($e),
+                ]);
             }
         }
     }

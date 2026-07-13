@@ -5,23 +5,28 @@ declare(strict_types=1);
 namespace Macopedia\Allegro\Model\Api;
 
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use Macopedia\Allegro\Api\Data\TokenInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Macopedia\Allegro\Logger\Logger;
 use Macopedia\Allegro\Model\Configuration;
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\ClientFactory;
-use GuzzleHttp\Psr7\Response;
-use GuzzleHttp\Psr7\ResponseFactory;
 use Magento\Framework\Webapi\Rest\Request as MagentoRequest;
+use Psr\Http\Message\ResponseInterface;
 
 /**
  * Processes API requests and responses
  */
 class Client
 {
-    const API_URL = 'https://api.allegro.pl/';
-    const SANDBOX_API_URL = 'https://api.allegro.pl.allegrosandbox.pl/';
+    public const API_URL = 'https://api.allegro.pl/';
+    public const SANDBOX_API_URL = 'https://api.allegro.pl.allegrosandbox.pl/';
+
+    private const MAX_REQUEST_ATTEMPTS = 3;
+    private const CONNECT_TIMEOUT_SECONDS = 10;
+    private const REQUEST_TIMEOUT_SECONDS = 120;
+    private const RETRY_BASE_DELAY_MICROSECONDS = 250000;
 
     /** @var Json */
     private $json;
@@ -33,14 +38,12 @@ class Client
     private $config;
 
     /**
-     * @var ResponseFactory
-     */
-    private $responseFactory;
-
-    /**
      * @var ClientFactory
      */
     private $clientFactory;
+
+    /** @var ApiErrorResponseParser */
+    private $errorResponseParser;
 
     /**
      * Client constructor.
@@ -48,20 +51,20 @@ class Client
      * @param Logger $logger
      * @param Configuration $config
      * @param ClientFactory $clientFactory
-     * @param ResponseFactory $responseFactory
+     * @param ApiErrorResponseParser $errorResponseParser
      */
     public function __construct(
         Json $json,
         Logger $logger,
         Configuration $config,
         ClientFactory $clientFactory,
-        ResponseFactory $responseFactory
+        ApiErrorResponseParser $errorResponseParser
     ) {
         $this->json = $json;
         $this->logger = $logger;
         $this->config = $config;
         $this->clientFactory = $clientFactory;
-        $this->responseFactory = $responseFactory;
+        $this->errorResponseParser = $errorResponseParser;
     }
 
     /**
@@ -75,28 +78,53 @@ class Client
     {
         try {
             $json = $this->sendHttpRequest($token, $request);
+        } catch (GuzzleException $e) {
+            throw $this->createTransportException($e, $request);
         } catch (\Exception $e) {
-            $message = $this->logger->getFullErrorMessage($e);
-            $this->logger->exception($e, $message);
+            $this->logger->apiFailure('Unexpected Allegro API client failure', [
+                'method' => $request->getMethod(),
+                'uri' => $request->getUri(),
+                'exception_type' => get_class($e),
+            ]);
 
-            if($request->getMethod() == MagentoRequest::HTTP_METHOD_PUT) {
-                dd($request->getBody(), $message);
-            }
-
-            throw new ClientResponseException(__($message), $e, $e->getCode());
+            throw new ClientResponseException(
+                __('Unexpected error while communicating with Allegro API.'),
+                $e,
+                (int)$e->getCode()
+            );
         }
-        $response = $this->json->unserialize($json);
+
+        try {
+            $response = $this->json->unserialize($json);
+        } catch (\InvalidArgumentException $e) {
+            $this->logger->apiFailure('Invalid JSON returned by Allegro API', [
+                'method' => $request->getMethod(),
+                'uri' => $request->getUri(),
+            ]);
+
+            throw new ClientResponseException(
+                __('Allegro API returned an invalid response.'),
+                $e
+            );
+        }
+
+        if (!is_array($response)) {
+            throw new ClientResponseException(__('Allegro API returned an invalid response structure.'));
+        }
 
         if (isset($response['errors'])) {
-            $errors = [];
-            foreach ($response['errors'] as $error) {
-                $errors[] = $error['message'] != '' ? $error['message'] : $error['userMessage'];
-            }
+            $errors = $this->errorResponseParser->parse($json);
+            $message = $this->errorResponseParser->format($errors);
             throw new ClientResponseErrorException(
                 __(
-                    'Errors returned in received from Allegro API response: %1',
-                    implode(' ', $errors)
-                )
+                    'Allegro API rejected the request: %1',
+                    $message ?: (string)__('Unknown validation error')
+                ),
+                null,
+                0,
+                null,
+                null,
+                $errors
             );
         }
 
@@ -133,7 +161,7 @@ class Client
     /**
      * @param TokenInterface $token
      * @param Request $request
-     * @return bool|string
+     * @return string
      * @throws GuzzleException
      */
     private function sendHttpRequest(TokenInterface $token, Request $request)
@@ -153,22 +181,33 @@ class Client
             $params[$content] = $body;
         }
         $client = $this->clientFactory->create([
-            'config' =>
-                [
-                    'base_uri' => $this->getApiUrl($request),
-                    'timeout' => 120
-                ],
+            'config' => [
+                'base_uri' => $this->getApiUrl($request),
+                'connect_timeout' => self::CONNECT_TIMEOUT_SECONDS,
+                'timeout' => self::REQUEST_TIMEOUT_SECONDS,
+                'http_errors' => true,
+            ],
         ]);
 
         if (!$this->config->isDebugModeEnabled()) {
             return $this->getResponse($client, $method, $uri, $params);
         }
 
-        $requestId = uniqid('', true);
-        $body = $content == 'body' ? $body : $this->json->serialize($body);
-        $this->logger->debug('ALLEGRO API HTTP REQUEST ' . $requestId . ': ' . $method . ' ' . $uri . $this->json->serialize($params));
+        $requestId = bin2hex(random_bytes(8));
+        $this->logger->debug('Allegro API HTTP request', [
+            'request_id' => $requestId,
+            'method' => $method,
+            'uri' => $uri,
+            'sandbox' => $request->isSandbox(),
+            'body_fields' => is_array($body) ? array_keys($body) : [],
+        ]);
         $response = $this->getResponse($client, $method, $uri, $params);
-        $this->logger->debug('ALLEGRO API HTTP RESPONSE ' . $requestId . ': ' . $method . ' ' . $uri . ' ' . $response);
+        $this->logger->debug('Allegro API HTTP response', [
+            'request_id' => $requestId,
+            'method' => $method,
+            'uri' => $uri,
+            'response_bytes' => strlen($response),
+        ]);
 
         return $response;
     }
@@ -183,7 +222,21 @@ class Client
      */
     public function getResponse(GuzzleClient $client, string $method, string $uri, array $params)
     {
-        $response = $client->request($method, $uri, $params);
+        $attempt = 0;
+        do {
+            $attempt++;
+            try {
+                $response = $client->request($method, $uri, $params);
+                break;
+            } catch (GuzzleException $e) {
+                if (!$this->shouldRetry($e, $method, $attempt)) {
+                    throw $e;
+                }
+
+                usleep($this->retryDelayMicroseconds($e, $attempt));
+            }
+        } while ($attempt < self::MAX_REQUEST_ATTEMPTS);
+
         $contents = $response->getBody()->getContents();
 
         if (empty($contents)) {
@@ -193,5 +246,90 @@ class Client
         }
 
         return $contents;
+    }
+
+    private function createTransportException(
+        GuzzleException $exception,
+        Request $request
+    ): ClientResponseException {
+        $response = $exception instanceof RequestException ? $exception->getResponse() : null;
+        $statusCode = $response ? $response->getStatusCode() : null;
+        $requestId = $this->extractRequestId($response);
+        $errors = $response
+            ? $this->errorResponseParser->parse((string)$response->getBody())
+            : [];
+        $apiMessage = $this->errorResponseParser->format($errors);
+
+        $this->logger->apiFailure('Allegro API request failed', [
+            'method' => $request->getMethod(),
+            'uri' => $request->getUri(),
+            'status_code' => $statusCode,
+            'request_id' => $requestId,
+            'error_codes' => array_values(array_filter(array_column($errors, 'code'))),
+            'error_paths' => array_values(array_filter(array_column($errors, 'path'))),
+            'exception_type' => get_class($exception),
+        ]);
+
+        $message = $apiMessage ?: ($statusCode
+            ? (string)__('Allegro API request failed with HTTP status %1.', $statusCode)
+            : (string)__('Could not connect to Allegro API.'));
+
+        $cause = $exception instanceof \Exception ? $exception : null;
+
+        return new ClientResponseException(
+            __($message),
+            $cause,
+            (int)$exception->getCode(),
+            $statusCode,
+            $requestId,
+            $errors
+        );
+    }
+
+    private function extractRequestId(?ResponseInterface $response): ?string
+    {
+        if (!$response) {
+            return null;
+        }
+
+        foreach (['Trace-Id', 'X-Request-Id', 'Request-Id'] as $header) {
+            $value = trim($response->getHeaderLine($header));
+            if ($value !== '') {
+                return $value;
+            }
+        }
+
+        return null;
+    }
+
+    private function shouldRetry(GuzzleException $exception, string $method, int $attempt): bool
+    {
+        if ($attempt >= self::MAX_REQUEST_ATTEMPTS) {
+            return false;
+        }
+
+        if (!in_array(strtoupper($method), ['GET', 'PUT', 'DELETE'], true)) {
+            return false;
+        }
+
+        if (!$exception instanceof RequestException || !$exception->getResponse()) {
+            return true;
+        }
+
+        $statusCode = $exception->getResponse()->getStatusCode();
+        return $statusCode === 429 || $statusCode >= 500;
+    }
+
+    private function retryDelayMicroseconds(GuzzleException $exception, int $attempt): int
+    {
+        if ($exception instanceof RequestException && $exception->getResponse()) {
+            $retryAfter = trim($exception->getResponse()->getHeaderLine('Retry-After'));
+            if (ctype_digit($retryAfter)) {
+                return min((int)$retryAfter, 5) * 1000000;
+            }
+        }
+
+        $exponentialDelay = self::RETRY_BASE_DELAY_MICROSECONDS * (2 ** ($attempt - 1));
+        return $exponentialDelay + random_int(0, 100000);
     }
 }

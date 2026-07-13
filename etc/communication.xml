@@ -2,4 +2,8 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Communication/etc/communication.xsd">
     <topic name="allegro.change.stock" request="Macopedia\Allegro\Api\Consumer\MessageInterface" />
     <topic name="allegro.change.stock.db" request="Macopedia\Allegro\Api\Consumer\MessageInterface" />
+    <topic name="allegro.order.status" request="Macopedia\Allegro\Api\Consumer\EntityMessageInterface" />
+    <topic name="allegro.order.status.db" request="Macopedia\Allegro\Api\Consumer\EntityMessageInterface" />
+    <topic name="allegro.shipment" request="Macopedia\Allegro\Api\Consumer\EntityMessageInterface" />
+    <topic name="allegro.shipment.db" request="Macopedia\Allegro\Api\Consumer\EntityMessageInterface" />
 </config>

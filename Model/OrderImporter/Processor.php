@@ -22,6 +22,7 @@ use Magento\Framework\Stdlib\DateTime\DateTime;
 use Macopedia\Allegro\Model\Configuration;
 use Macopedia\Allegro\Model\OrderRepository;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\Lock\LockManagerInterface;
 
 class Processor
 {
@@ -52,6 +53,9 @@ class Processor
     /** @var ResourceConnection */
     private $resource;
 
+    /** @var LockManagerInterface */
+    private $lockManager;
+
     /**
      * Processor constructor.
      * @param Creator $creator
@@ -63,6 +67,7 @@ class Processor
      * @param Configuration $configuration
      * @param AllegroReservation $allegroReservation
      * @param ResourceConnection $resource
+     * @param LockManagerInterface $lockManager
      */
     public function __construct(
         Creator $creator,
@@ -73,7 +78,8 @@ class Processor
         DateTime $date,
         Configuration $configuration,
         AllegroReservation $allegroReservation,
-        ResourceConnection $resource
+        ResourceConnection $resource,
+        LockManagerInterface $lockManager
     ) {
         $this->creator = $creator;
         $this->logger = $logger;
@@ -84,6 +90,7 @@ class Processor
         $this->configuration = $configuration;
         $this->allegroReservation = $allegroReservation;
         $this->resource = $resource;
+        $this->lockManager = $lockManager;
     }
 
     /**
@@ -94,6 +101,13 @@ class Processor
     {
         $connection = $this->resource->getConnection();
         $checkoutFormId = $checkoutForm->getId();
+        $lockName = 'macopedia_allegro_order_' . hash('sha256', $checkoutFormId);
+        if (!$this->lockManager->lock($lockName, 5)) {
+            throw new OrderProcessingException(
+                "Order with id [{$checkoutFormId}] is already being processed"
+            );
+        }
+
         try {
             $connection->beginTransaction();
 
@@ -114,6 +128,8 @@ class Processor
             $connection->rollBack();
             $this->addOrderWithErrorToTable($checkoutFormId, $e);
             throw $e;
+        } finally {
+            $this->lockManager->unlock($lockName);
         }
     }
 

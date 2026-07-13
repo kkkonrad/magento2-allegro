@@ -4,7 +4,7 @@ namespace Macopedia\Allegro\Model\Api;
 
 use Macopedia\Allegro\Api\Data\ProductInterface;
 use Macopedia\Allegro\Api\ProductCatalogRepositoryInterface;
-use Macopedia\Allegro\Model\Api\Client\ClientException;
+use Macopedia\Allegro\Model\Api\ClientException;
 use Macopedia\Allegro\Model\ResourceModel\AbstractResource;
 use Macopedia\Allegro\Api\Data\TokenInterface;
 
@@ -86,7 +86,7 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
 
             return $this->createProduct($response);
         } catch (ClientException $e) {
-            throw new ClientException(__('Could not get product: %1', $e->getMessage()));
+            throw new ClientException(__('Could not get Allegro catalog product.'), $e);
         }
     }
 
@@ -105,7 +105,7 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
 
             return $response['id'];
         } catch (ClientException $e) {
-            throw new ClientException(__('Could not create product: %1', $e->getMessage()));
+            throw new ClientException(__('Could not create Allegro catalog product.'), $e);
         }
     }
 
@@ -144,4 +144,4 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
             'description' => $product->getDescription()
         ];
     }
-} 
+}

@@ -13,6 +13,7 @@ use Magento\Framework\Exception\LocalizedException;
  */
 class Publish extends Offer
 {
+    public const ADMIN_RESOURCE = 'Macopedia_Allegro::offer_publish';
 
     /**
      * @return ResultInterface|ResponseInterface

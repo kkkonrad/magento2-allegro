@@ -5,6 +5,10 @@
         <column xsi:type="varchar" length="255" name="external_id" nullable="true" comment="External order ID"/>
         <column xsi:type="varchar" length="255" name="external_guid" nullable="true" comment="External order GUID"/>
         <column xsi:type="varchar" length="255" name="allegro_buyer_login" nullable="true" comment="Allegro buyer login"/>
+        <constraint xsi:type="unique" referenceId="SALES_ORDER_ORDER_FROM_EXTERNAL_ID">
+            <column name="order_from"/>
+            <column name="external_id"/>
+        </constraint>
     </table>
 
     <table name="sales_order_grid">
@@ -76,6 +80,89 @@
         <constraint xsi:type="primary" referenceId="PRIMARY">
             <column name="entity_id"/>
         </constraint>
+    </table>
+
+    <table name="allegro_offer_mapping_reconciliation" resource="default" engine="innodb" comment="Allegro offer mappings awaiting reconciliation">
+        <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="int" name="product_id" padding="10" unsigned="true" nullable="false" comment="Magento Product ID"/>
+        <column xsi:type="varchar" name="offer_id" length="64" nullable="false" comment="Allegro Offer ID"/>
+        <column xsi:type="varchar" name="allegro_product_id" length="64" nullable="true" comment="Allegro Catalog Product ID"/>
+        <column xsi:type="varchar" name="seller_id" length="64" nullable="true" comment="Allegro Seller ID"/>
+        <column xsi:type="varchar" name="environment" length="16" nullable="false" comment="Allegro Environment"/>
+        <column xsi:type="varchar" name="status" length="16" nullable="false" default="pending" comment="Reconciliation Status"/>
+        <column xsi:type="int" name="attempts" padding="10" unsigned="true" nullable="false" default="0" comment="Reconciliation Attempts"/>
+        <column xsi:type="text" name="last_error" nullable="true" comment="Last Safe Error Message"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="ALLEGRO_MAPPING_RECONCILIATION_PRODUCT_ID_CATALOG_PRODUCT_ENTITY_ENTITY_ID" table="allegro_offer_mapping_reconciliation" column="product_id" referenceTable="catalog_product_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <constraint xsi:type="unique" referenceId="ALLEGRO_MAPPING_RECONCILIATION_OFFER_ENVIRONMENT">
+            <column name="offer_id"/>
+            <column name="environment"/>
+        </constraint>
+        <index referenceId="ALLEGRO_MAPPING_RECONCILIATION_STATUS_ATTEMPTS" indexType="btree">
+            <column name="status"/>
+            <column name="attempts"/>
+        </index>
+    </table>
+
+    <table name="allegro_offer_sync_state" resource="default" engine="innodb" comment="Last successfully synchronized Allegro offer state">
+        <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="int" name="product_id" padding="10" unsigned="true" nullable="false" comment="Magento Product ID"/>
+        <column xsi:type="varchar" name="offer_id" length="64" nullable="false" comment="Allegro Offer ID"/>
+        <column xsi:type="varchar" name="environment" length="16" nullable="false" comment="Allegro Environment"/>
+        <column xsi:type="varchar" name="state_hash" length="64" nullable="false" comment="Synchronized State Hash"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="ALLEGRO_OFFER_SYNC_STATE_PRODUCT_ID_CATALOG_PRODUCT_ENTITY_ENTITY_ID" table="allegro_offer_sync_state" column="product_id" referenceTable="catalog_product_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <constraint xsi:type="unique" referenceId="ALLEGRO_OFFER_SYNC_STATE_PRODUCT_ENVIRONMENT">
+            <column name="product_id"/>
+            <column name="environment"/>
+        </constraint>
+        <index referenceId="ALLEGRO_OFFER_SYNC_STATE_OFFER_ID" indexType="btree">
+            <column name="offer_id"/>
+        </index>
+    </table>
+
+    <table name="allegro_outbound_sync_state" resource="default" engine="innodb" comment="Last successfully synchronized Allegro outbound operation">
+        <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="varchar" name="operation" length="32" nullable="false" comment="Operation Type"/>
+        <column xsi:type="varchar" name="source_id" length="64" nullable="false" comment="Magento Source Entity ID"/>
+        <column xsi:type="varchar" name="environment" length="16" nullable="false" comment="Allegro Environment"/>
+        <column xsi:type="varchar" name="state_hash" length="64" nullable="false" comment="Synchronized State Hash"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="ALLEGRO_OUTBOUND_SYNC_OPERATION_SOURCE_ENVIRONMENT">
+            <column name="operation"/>
+            <column name="source_id"/>
+            <column name="environment"/>
+        </constraint>
+    </table>
+
+    <table name="allegro_async_failures" resource="default" engine="innodb" comment="Retry and dead registry for Allegro asynchronous operations">
+        <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="varchar" name="operation" length="32" nullable="false" comment="Operation Type"/>
+        <column xsi:type="int" name="source_id" padding="10" unsigned="true" nullable="false" comment="Magento Source Entity ID"/>
+        <column xsi:type="varchar" name="environment" length="16" nullable="false" comment="Allegro Environment"/>
+        <column xsi:type="varchar" name="status" length="16" nullable="false" default="pending" comment="Retry Status"/>
+        <column xsi:type="int" name="attempts" padding="10" unsigned="true" nullable="false" default="0" comment="Attempts"/>
+        <column xsi:type="text" name="last_error" nullable="true" comment="Last Safe Error"/>
+        <column xsi:type="timestamp" name="next_attempt_at" on_update="false" nullable="true" comment="Next Attempt At"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY"><column name="entity_id"/></constraint>
+        <constraint xsi:type="unique" referenceId="ALLEGRO_ASYNC_FAILURE_OPERATION_SOURCE_ENVIRONMENT">
+            <column name="operation"/><column name="source_id"/><column name="environment"/>
+        </constraint>
+        <index referenceId="ALLEGRO_ASYNC_FAILURE_STATUS_NEXT_ATTEMPT" indexType="btree">
+            <column name="status"/><column name="next_attempt_at"/>
+        </index>
     </table>
 
 </schema>

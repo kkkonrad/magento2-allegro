@@ -4,55 +4,51 @@ namespace Macopedia\Allegro\Controller\Adminhtml\Offer;
 
 use Macopedia\Allegro\Api\Data\ImageInterface;
 use Macopedia\Allegro\Api\Data\Offer\AfterSalesServicesInterface;
-use Macopedia\Allegro\Api\Data\Offer\LocationInterface;
 use Macopedia\Allegro\Api\Data\OfferInterface;
-use Macopedia\Allegro\Api\Data\ParameterInterface;
-use Macopedia\Allegro\Api\Data\ParameterInterfaceFactoryInterface;
 use Macopedia\Allegro\Controller\Adminhtml\Offer;
 use Macopedia\Allegro\Controller\Adminhtml\Offer\Context as OfferContext;
+use Macopedia\Allegro\Model\OfferMappingService;
+use Macopedia\Allegro\Model\Offer\ProductOfferSaveService;
 use Magento\Backend\App\Action\Context;
-use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\App\ResponseInterface;
-use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Controller\ResultInterface;
 use Magento\Framework\Exception\LocalizedException;
-use Macopedia\Allegro\Api\ProductOfferRepositoryInterface;
-use Macopedia\Allegro\Model\Api\ProductOfferFactory;
-use Magento\Framework\App\Config\ScopeConfigInterface;
 
 /**
  * Save controller class
  */
 class Save extends Offer
 {
+    public const ADMIN_RESOURCE = 'Macopedia_Allegro::offer_manage';
 
     /** @var AfterSalesServicesInterface */
     private $afterSalesServicesFactory;
 
-    /** @var ProductOfferRepositoryInterface */
-    private $productOfferRepository;
+    /** @var OfferMappingService */
+    private $offerMappingService;
 
-    /** @var ProductOfferFactory */
-    private $productOfferFactory;
+    /** @var ProductOfferSaveService */
+    private $productOfferSaveService;
 
     /**
      * Save constructor.
      * @param Context $context
      * @param \Macopedia\Allegro\Controller\Adminhtml\Offer\Context $offerContext
      * @param AfterSalesServicesInterface $afterSalesServicesFactory
-     * @param ProductOfferRepositoryInterface $productOfferRepository
-     * @param ProductOfferFactory $productOfferFactory
+     * @param OfferMappingService $offerMappingService
+     * @param ProductOfferSaveService $productOfferSaveService
      */
     public function __construct(
         Context $context,
         OfferContext $offerContext,
         AfterSalesServicesInterface $afterSalesServicesFactory,
-        ProductOfferRepositoryInterface $productOfferRepository,
-        ProductOfferFactory $productOfferFactory,
+        OfferMappingService $offerMappingService,
+        ProductOfferSaveService $productOfferSaveService
     ) {
         parent::__construct($context, $offerContext);
         $this->afterSalesServicesFactory = $afterSalesServicesFactory;
-        $this->productOfferRepository = $productOfferRepository;
-        $this->productOfferFactory = $productOfferFactory;
+        $this->offerMappingService = $offerMappingService;
+        $this->productOfferSaveService = $productOfferSaveService;
     }
 
     /**
@@ -60,26 +56,32 @@ class Save extends Offer
      */
     public function execute()
     {
-   
         try {
             $data = $this->getRequest()->getParam('allegro');
+            if (!is_array($data)) {
+                throw new LocalizedException(__('Offer form data is missing or invalid.'));
+            }
 
-         
             $data['seller_id'] = $this->credentials->getClientId();
+            $this->hydrateCatalogProductIdForEdit($data);
             if (!empty($data['product_id'])) {
-                $offerId = $this->saveProductOffer($data);
+                $result = $this->productOfferSaveService->execute($data);
+                $offerId = $result['offer_id'];
+                if (!$result['mapping_saved']) {
+                    $this->messageManager->addWarningMessage(
+                        __('The offer was created, but its Magento mapping is pending automatic reconciliation.')
+                    );
+                }
                 $this->messageManager->addSuccessMessage(__('Product offer saved successfully'));
                 return $this->createRedirectEditResult($offerId);
             }
 
             // Fallback to old logic if product_id is not present
             $offer = $this->initializeOffer($data);
-        
             $this->offerRepository->save($offer);
             $offerId = $offer->getId();
 
             $this->handleProductLink($offerId, $data);
-          
             if ($offer->isValid()) {
                 $this->messageManager->addSuccessMessage(__('Offer saved successfully'));
             } else {
@@ -106,74 +108,6 @@ class Save extends Offer
     }
 
     /**
-     * @param array $data
-     * @return string
-     */
-    private function saveProductOffer(array $data)
-    {
-        $productOffer = $this->productOfferFactory->create();
-        
-        // WYMAGANE POLA dla API
-        
-        // 1. Nazwa oferty (wymagane)
-        $name = $data['name'] ?? $data['title'] ?? 'Oferta produktu';
-        $productOffer->setName($name);
-        
-        // 2. Selling Mode z ceną (wymagane)
-        $productOffer->setSellingMode([
-            'format' => 'BUY_NOW',
-            'price' => [
-                'amount' => (string)$data['price'],
-                'currency' => 'PLN'
-            ]
-        ]);
-        
-        // 3. Lokalizacja (wymagane)
-        $productOffer->setLocation([
-            'city' => $this->scopeConfig->getValue('allegro/origin/city') ?: 'Warszawa',
-            'countryCode' => $this->scopeConfig->getValue('allegro/origin/country_id') ?: 'PL',
-            'postCode' => $this->scopeConfig->getValue('allegro/origin/post_code') ?: '00-001',
-            'province' => $this->scopeConfig->getValue('allegro/origin/province') ?: 'MAZOWIECKIE'
-        ]);
-        
-        // Pozostałe pola
-        $productOffer->setProductId($data['product_id']);
-        $productOffer->setPrice($data['price']);
-        $productOffer->setQuantity($data['qty']);
-        $productOffer->setStatus('ACTIVE');
-        $productOffer->setSellerId($this->credentials->getClientId());
-        
-        // Ustaw kategorię z danych produktu lub z formularza
-        if (!empty($data['category'])) {
-            $productOffer->setCategory($data['category']);
-        }
-        
-        // Ustaw parametry jeśli są dostępne
-        if (!empty($data['parameters'])) {
-            $productOffer->setParameters($data['parameters']);
-        }
-        
-        // Ustaw opcje dostawy
-        $deliveryOptions = [];
-        if (!empty($data['delivery']['shipping_rates_id'])) {
-            $deliveryOptions['shipping_rates_id'] = $data['delivery']['shipping_rates_id'];
-        }
-        if (!empty($data['delivery']['handling_time'])) {
-            $deliveryOptions['handling_time'] = $data['delivery']['handling_time'];
-        }
-        $productOffer->setDeliveryOptions($deliveryOptions);
-        
-        // Ustaw płatności
-        $payments = [];
-        if (!empty($data['payments']['invoice'])) {
-            $payments['invoice'] = $data['payments']['invoice'];
-        }
-        $productOffer->setPayments($payments);
-
-        return $this->productOfferRepository->save($productOffer);
-    }
-
-    /**
      * @param string $offerId
      * @param array $data
      */
@@ -184,17 +118,40 @@ class Save extends Offer
             return;
         }
 
-        try {
-            $product = $this->productRepository->getById($productId);
-            $product->setData('allegro_offer_id', $offerId);
-            if (!empty($data['product_id'])) {
-                $product->setData('allegro_product_id', $data['product_id']);
-            }
-            $this->productRepository->save($product);
-        } catch (\Exception $e) {
+        if (!$this->offerMappingService->saveMapping(
+            (int)$productId,
+            $offerId,
+            !empty($data['product_id']) ? (string)$data['product_id'] : null
+        )) {
             $this->messageManager->addWarningMessage(
-                __('Could not assign offer id to product. Please update product data with proper offer ID manually')
+                __('The offer was created, but its Magento mapping is pending automatic reconciliation.')
             );
+        }
+    }
+
+    /**
+     * Legacy edit UI loads the offer through the generic offers endpoint and does
+     * not expose product_id. Product offers created by this module always persist
+     * their catalog ID on the Magento product, so restore it before deciding which
+     * API endpoint handles the save.
+     */
+    private function hydrateCatalogProductIdForEdit(array &$data): void
+    {
+        if (!empty($data['product_id']) || empty($data['id']) || empty($data['product'])) {
+            return;
+        }
+
+        try {
+            $product = $this->productRepository->getById((int)$data['product']);
+            $catalogProductId = (string)$product->getData('allegro_product_id');
+            if ($catalogProductId !== '') {
+                $data['product_id'] = $catalogProductId;
+            }
+        } catch (\Exception $exception) {
+            $this->logger->apiFailure('Could not load Allegro catalog product mapping for offer edit', [
+                'product_id' => (int)$data['product'],
+                'exception_type' => get_class($exception),
+            ]);
         }
     }
 

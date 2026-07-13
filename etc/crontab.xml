@@ -16,5 +16,11 @@
         <job instance="Macopedia\Allegro\Cron\CleanOffersMapping" method="execute" name="macopedia_allegro_clean_offers_mapping">
             <schedule>0 10 * * *</schedule>
         </job>
+        <job instance="Macopedia\Allegro\Cron\ReconcileOfferMappings" method="execute" name="macopedia_allegro_reconcile_offer_mappings">
+            <schedule>*/10 * * * *</schedule>
+        </job>
+        <job instance="Macopedia\Allegro\Cron\RetryAsyncOperations" method="execute" name="macopedia_allegro_retry_async_operations">
+            <schedule>*/5 * * * *</schedule>
+        </job>
     </group>
 </config>

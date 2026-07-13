@@ -5,7 +5,7 @@ namespace Macopedia\Allegro\Observer;
 use Macopedia\Allegro\Model\OrderImporter\OriginOfOrder;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
-use Macopedia\Allegro\Model\AllegroOrderStatus;
+use Macopedia\Allegro\Service\OutboundMessagePublisher;
 
 class SaveOrderAfterObserver implements ObserverInterface
 {
@@ -17,18 +17,18 @@ class SaveOrderAfterObserver implements ObserverInterface
     /**
      * @var AllegroOrderStatus
      */
-    protected $allegroOrderStatus;
+    protected $messagePublisher;
 
     /**
      * @param OriginOfOrder $orderOrigin
-     * @param AllegroOrderStatus $allegroOrderStatus
+     * @param OutboundMessagePublisher $messagePublisher
      */
     public function __construct(
         OriginOfOrder $orderOrigin,
-        AllegroOrderStatus $allegroOrderStatus
+        OutboundMessagePublisher $messagePublisher
     ) {
         $this->orderOrigin = $orderOrigin;
-        $this->allegroOrderStatus = $allegroOrderStatus;
+        $this->messagePublisher = $messagePublisher;
     }
 
     /**
@@ -42,7 +42,7 @@ class SaveOrderAfterObserver implements ObserverInterface
         if (!$order->getId() || !$this->orderOrigin->isOrderFromAllegro($order)) {
             return $this;
         }
-        $this->allegroOrderStatus->updateOrderStatus($order);
+        $this->messagePublisher->publishOrderStatus((int)$order->getId());
 
         return $this;
     }

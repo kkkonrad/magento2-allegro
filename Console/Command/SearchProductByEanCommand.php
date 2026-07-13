@@ -8,6 +8,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Macopedia\Allegro\Api\ProductCatalogRepositoryInterface;
 use Magento\Framework\App\State;
+use Magento\Framework\Console\Cli;
 
 class SearchProductByEanCommand extends Command
 {
@@ -51,7 +52,7 @@ class SearchProductByEanCommand extends Command
     /**
      * {@inheritdoc}
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $this->state->setAreaCode(\Magento\Framework\App\Area::AREA_ADMINHTML);
 
@@ -63,7 +64,7 @@ class SearchProductByEanCommand extends Command
 
             if (empty($products)) {
                 $output->writeln("<error>No product found for EAN: {$ean}</error>");
-                return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+                return Cli::RETURN_FAILURE;
             }
 
 
@@ -72,11 +73,11 @@ class SearchProductByEanCommand extends Command
             $output->writeln("  ID:   <comment>{$product->getId()}</comment>");
             $output->writeln("  Name: <comment>{$product->getName()}</comment>");
 
-            return \Magento\Framework\Console\Cli::RETURN_SUCCESS;
+            return Cli::RETURN_SUCCESS;
 
         } catch (\Exception $e) {
-            $output->writeln("<error>An error occurred: {$e->getMessage()}</error>");
-            return \Magento\Framework\Console\Cli::RETURN_FAILURE;
+            $output->writeln('<error>Allegro catalog request failed. Check the Allegro logs.</error>');
+            return Cli::RETURN_FAILURE;
         }
     }
-} 
+}

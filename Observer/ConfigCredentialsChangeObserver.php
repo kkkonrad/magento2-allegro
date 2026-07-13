@@ -16,8 +16,9 @@ use Macopedia\Allegro\Model\Api\Credentials;
 class ConfigCredentialsChangeObserver implements ObserverInterface
 {
     private static $credentialKeys = [
-        'allegro/credentials/api_key',
-        'allegro/credentials/client_id'
+        'allegro/credentials/client_id',
+        'allegro/credentials/client_secret',
+        'allegro/general/sandbox',
     ];
 
     /** @var ScopeConfigInterface */
@@ -56,7 +57,7 @@ class ConfigCredentialsChangeObserver implements ObserverInterface
      */
     public function execute(Observer $observer)
     {
-        $changedPaths = $observer->getData('changed_paths');
+        $changedPaths = (array)$observer->getData('changed_paths');
         if (!empty(array_intersect($changedPaths, self::$credentialKeys))) {
             try {
                 $this->credentials->getToken();

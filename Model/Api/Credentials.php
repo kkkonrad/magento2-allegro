@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Macopedia\Allegro\Model\Api;
 
 use Macopedia\Allegro\Api\Data\TokenInterface;
 use Macopedia\Allegro\Model\Api\Auth\Data\TokenSerializer;
 use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\App\Config\Storage\WriterInterface;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\FlagManager;
 
 /**
@@ -23,9 +23,6 @@ class Credentials
     /** @var ScopeConfigInterface */
     private $scopeConfig;
 
-    /** @var WriterInterface */
-    private $configWriter;
-
     /** @var TokenSerializer */
     private $tokenSerializer;
 
@@ -34,18 +31,15 @@ class Credentials
 
     /**
      * @param ScopeConfigInterface $scopeConfig
-     * @param WriterInterface $configWriter
      * @param TokenSerializer $tokenSerializer
      * @param FlagManager $flagManager
      */
     public function __construct(
         ScopeConfigInterface $scopeConfig,
-        WriterInterface $configWriter,
         TokenSerializer $tokenSerializer,
         FlagManager $flagManager
     ) {
         $this->scopeConfig = $scopeConfig;
-        $this->configWriter = $configWriter;
         $this->tokenSerializer = $tokenSerializer;
         $this->flagManager = $flagManager;
     }
@@ -88,7 +82,7 @@ class Credentials
     public function saveToken(TokenInterface $token)
     {
         $this->flagManager->saveFlag(
-            self::TOKEN_DATA_FLAG_NAME,
+            $this->getTokenFlagName(),
             $this->tokenSerializer->encode($token)
         );
     }
@@ -98,7 +92,7 @@ class Credentials
      */
     public function deleteToken()
     {
-        $this->flagManager->deleteFlag(self::TOKEN_DATA_FLAG_NAME);
+        $this->flagManager->deleteFlag($this->getTokenFlagName());
     }
 
     /**
@@ -107,7 +101,7 @@ class Credentials
      */
     public function getToken()
     {
-        $tokenString = $this->flagManager->getFlagData(self::TOKEN_DATA_FLAG_NAME);
+        $tokenString = $this->flagManager->getFlagData($this->getTokenFlagName());
         if (!$tokenString) {
             throw new ClientException(__('Allegro account is not connected. Connect to Allegro account and try again'));
         }
@@ -116,5 +110,10 @@ class Credentials
         } catch (Auth\Data\TokenSerializerException $e) {
             throw new ClientException(__('Something went wrong while decoding Allegro Api token'));
         }
+    }
+
+    private function getTokenFlagName(): string
+    {
+        return self::TOKEN_DATA_FLAG_NAME . ($this->isSandbox() ? '_sandbox' : '_production');
     }
 }

@@ -12,10 +12,10 @@ use Macopedia\Allegro\Api\PublicationCommandRepositoryInterface;
 use Macopedia\Allegro\Api\QuantityCommandInterface;
 use Macopedia\Allegro\Logger\Logger;
 use Macopedia\Allegro\Model\Api\ClientException;
-use Macopedia\Allegro\Model\Api\Credentials;
 use Magento\Catalog\Api\Data\ProductInterface;
 use Magento\CatalogInventory\Model\Indexer\Stock\Processor;
 use Magento\Framework\Exception\CouldNotSaveException;
+use Magento\Framework\Lock\LockManagerInterface;
 use Magento\InventorySalesAdminUi\Model\GetSalableQuantityDataBySku;
 
 /**
@@ -40,9 +40,6 @@ class Consumer implements ConsumerInterface
     /** @var GetSalableQuantityDataBySku */
     private $getSalableQuantityDataBySku;
 
-    /** @var Credentials */
-    private $credentials;
-
     /** @var OfferRepositoryInterface */
     private $offerRepository;
 
@@ -61,12 +58,20 @@ class Consumer implements ConsumerInterface
     /** @var AllegroPrice */
     protected $allegroPrice;
 
+    /** @var LockManagerInterface */
+    private $lockManager;
+
+    /** @var OfferSyncState */
+    private $offerSyncState;
+
+    /** @var AsyncFailureRepository */
+    private $asyncFailureRepository;
+
     /**
      * Consumer constructor.
      * @param Logger $logger
      * @param ProductRepository $productRepository
      * @param GetSalableQuantityDataBySku $getSalableQuantityDataBySku
-     * @param Credentials $credentials
      * @param OfferRepositoryInterface $offerRepository
      * @param PublicationCommandRepositoryInterface $publicationCommandRepository
      * @param PublicationCommandInterfaceFactory $publicationCommandFactory
@@ -75,12 +80,14 @@ class Consumer implements ConsumerInterface
      * @param Processor $indexerProcessor
      * @param PriceCommandInterface $priceCommand
      * @param AllegroPrice $allegroPrice
+     * @param LockManagerInterface $lockManager
+     * @param OfferSyncState $offerSyncState
+     * @param AsyncFailureRepository $asyncFailureRepository
      */
     public function __construct(
         Logger $logger,
         ProductRepository $productRepository,
         GetSalableQuantityDataBySku $getSalableQuantityDataBySku,
-        Credentials $credentials,
         OfferRepositoryInterface $offerRepository,
         PublicationCommandRepositoryInterface $publicationCommandRepository,
         PublicationCommandInterfaceFactory $publicationCommandFactory,
@@ -88,12 +95,14 @@ class Consumer implements ConsumerInterface
         Configuration $config,
         Processor $indexerProcessor,
         PriceCommandInterface $priceCommand,
-        AllegroPrice $allegroPrice
+        AllegroPrice $allegroPrice,
+        LockManagerInterface $lockManager,
+        OfferSyncState $offerSyncState,
+        AsyncFailureRepository $asyncFailureRepository
     ) {
         $this->logger = $logger;
         $this->productRepository = $productRepository;
         $this->getSalableQuantityDataBySku = $getSalableQuantityDataBySku;
-        $this->credentials = $credentials;
         $this->offerRepository = $offerRepository;
         $this->publicationCommandRepository = $publicationCommandRepository;
         $this->publicationCommandFactory = $publicationCommandFactory;
@@ -102,6 +111,9 @@ class Consumer implements ConsumerInterface
         $this->indexerProcessor = $indexerProcessor;
         $this->priceCommand = $priceCommand;
         $this->allegroPrice = $allegroPrice;
+        $this->lockManager = $lockManager;
+        $this->offerSyncState = $offerSyncState;
+        $this->asyncFailureRepository = $asyncFailureRepository;
     }
 
     /**
@@ -119,6 +131,11 @@ class Consumer implements ConsumerInterface
             return;
         }
 
+        $lockName = 'macopedia_allegro_stock_sync_' . (int)$productId;
+        if (!$this->lockManager->lock($lockName, 0)) {
+            throw new \RuntimeException('A stock synchronization for this product is already running.');
+        }
+
         try {
             if ($product = $this->productRepository->getMinProductWithAllegro($productId)) {
                 $allegroOfferId = $product->getData('allegro_offer_id');
@@ -130,18 +147,29 @@ class Consumer implements ConsumerInterface
                 try {
                     $this->indexerProcessor->reindexList([$product->getId()], true);
                 } catch (\Exception $exception) {
-                    $this->logger->error($exception->getMessage(), $exception->getTrace());
+                    $this->logger->apiFailure('Could not refresh stock index before Allegro synchronization', [
+                        'product_id' => (int)$product->getId(),
+                        'exception_type' => get_class($exception),
+                    ]);
                 }
 
-                $this->updateOfferPrice($product, $allegroOfferId);
-
-                $offer = $this->offerRepository->get($allegroOfferId);
                 $productStock = $this->getSalableQuantityDataBySku->execute($product->getSku());
                 if (!isset($productStock[0]['qty'])) {
                     return;
                 }
 
-                $qty = $productStock[0]['qty'];
+                $qty = max(0, (int)floor((float)$productStock[0]['qty']));
+                $price = $this->getOfferPrice($product);
+                $stateHash = $this->offerSyncState->createHash($allegroOfferId, $qty, $price);
+                if ($this->offerSyncState->isCurrent((int)$product->getId(), $stateHash)) {
+                    return;
+                }
+
+                if ($price !== null) {
+                    $this->priceCommand->change($allegroOfferId, $price);
+                }
+
+                $offer = $this->offerRepository->get($allegroOfferId);
                 if ($qty > 0) {
                     $this->quantityCommand->change($allegroOfferId, $qty);
                     if (!$offer->isDraft()) {
@@ -158,6 +186,12 @@ class Consumer implements ConsumerInterface
 
                 }
 
+                $this->offerSyncState->markCurrent(
+                    (int)$product->getId(),
+                    $allegroOfferId,
+                    $stateHash
+                );
+
                 $this->logger->info(
                     sprintf(
                         'Quantity and price of offer with external id %s have been successfully updated',
@@ -166,9 +200,19 @@ class Consumer implements ConsumerInterface
                 );
             }
 
-        } catch (\Exception $e) {
-            $this->logger->error($e->getMessage());
-            return;
+        } catch (\Throwable $e) {
+            $this->asyncFailureRepository->recordFailure(
+                AsyncFailureRepository::OPERATION_STOCK,
+                (int)$productId,
+                $e
+            );
+            $this->logger->apiFailure('Allegro stock synchronization failed', [
+                'product_id' => (int)$productId,
+                'exception_type' => get_class($e),
+            ]);
+            throw $e;
+        } finally {
+            $this->lockManager->unlock($lockName);
         }
     }
 
@@ -193,16 +237,13 @@ class Consumer implements ConsumerInterface
      * @throws AllegroPriceGettingException
      * @throws \Magento\Framework\Exception\LocalizedException
      */
-    private function updateOfferPrice(ProductInterface $product, string $offerId)
+    private function getOfferPrice(ProductInterface $product): ?float
     {
         if (!$this->config->isPricePolicyEnabled()) {
-            return;
+            return null;
         }
 
         $price = $this->allegroPrice->getByProductId($product->getId());
-
-        if ($price > 0) {
-            $this->priceCommand->change($offerId, $price);
-        }
+        return $price > 0 ? (float)$price : null;
     }
 }

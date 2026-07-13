@@ -41,6 +41,10 @@
                         <model>\Macopedia\Allegro\Model\Config\CommentText\CallbackUrl</model>
                     </comment>
                 </field>
+                <field id="token_refresh_cron_enabled" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Token refresh cron enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
             </group>
             <group id="credentials" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="20" translate="label">
                 <label>Credentials</label>
@@ -64,6 +68,15 @@
                     <label>Stock synchronization enabled</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="retry_cron_enabled" translate="label" type="select" sortOrder="21" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Failed order import retry cron enabled</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="async_retry_cron_enabled" translate="label comment" type="select" sortOrder="22" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Asynchronous operation retry cron enabled</label>
+                    <comment>Retries stock, order status and shipment operations with backoff; five failures mark an operation as dead</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
                 <field id="tracking_number_sending_enabled" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Tracking number sending enabled</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
@@ -83,6 +96,11 @@
                 <field id="offers_mapping_cron_enabled" translate="label comment" type="select" sortOrder="31" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Cron for cleaning old offers mapping enabled</label>
                     <comment>Cron removes Allegro offer ID from product when offer no longer exists</comment>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                </field>
+                <field id="offer_mapping_reconciliation_cron_enabled" translate="label comment" type="select" sortOrder="32" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Offer mapping reconciliation cron enabled</label>
+                    <comment>Retries local product mapping after a successful Allegro offer creation</comment>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
                 <field id="store" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
@@ -184,4 +202,3 @@
         </section>
     </system>
 </config>
-

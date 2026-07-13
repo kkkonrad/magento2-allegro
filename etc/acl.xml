@@ -3,10 +3,18 @@
     <acl>
         <resources>
             <resource id="Magento_Backend::admin">
+                <resource id="Macopedia_Allegro::root" title="Allegro Integration" sortOrder="900">
+                    <resource id="Macopedia_Allegro::offer_view" title="View Allegro Offers" sortOrder="10"/>
+                    <resource id="Macopedia_Allegro::offer_manage" title="Create and Edit Allegro Offers" sortOrder="20"/>
+                    <resource id="Macopedia_Allegro::offer_publish" title="Publish and End Allegro Offers" sortOrder="30"/>
+                    <resource id="Macopedia_Allegro::orders_errors" title="View Failed Allegro Orders" sortOrder="40"/>
+                    <resource id="Macopedia_Allegro::orders_retry" title="Retry and Delete Failed Allegro Orders" sortOrder="50"/>
+                    <resource id="Macopedia_Allegro::reservations" title="Manage Allegro Reservations" sortOrder="60"/>
+                </resource>
                 <resource id="Magento_Backend::stores">
                     <resource id="Magento_Backend::stores_settings">
                         <resource id="Magento_Config::config">
-                            <resource id="Macopedia_Allegro::config_macopedia_allegro" title="Allegro"/>
+                            <resource id="Macopedia_Allegro::config_macopedia_allegro" title="Allegro Configuration"/>
                         </resource>
                     </resource>
                 </resource>

@@ -1,16 +1,13 @@
-# Magento 2 - Allegro Integration Module
-Magento 2 Allegro Integration module. Supports Magento 2 >= v2.3. Currently is not working with current Allegro API.
+# Magento 2 — integracja Allegro
 
-## UWAGA
-Moduł nie jest kompatybilny z najnowszą zmianą w Allegro.pl dotyczącą łączenia ofert z Katalogiem Produktów - wpis: <a href="https://developer.allegro.pl/news/od-dzisiaj-nowe-oferty-w-wybranych-dzialach-wystawisz-dopiero-gdy-polaczysz-je-z-katalogiem-produktow-d2qzkBwy2CZ">Od dzisiaj nowe oferty w wybranych działach wystawisz dopiero, gdy połączysz je z Katalogiem produktów</a>. 
-W efekcie wystawienie ofert z tego modułu na Allegro jest niemożliwe. Jest to związane ze zmianą, którą wprowadził serwis Allegro.
+Moduł integruje Magento 2.4 (`magento/framework ^103.0`, PHP 8.1+) z Allegro REST API. Obsługuje środowisko produkcyjne i Sandbox, Katalog Produktów Allegro, oferty produktowe, import zamówień oraz asynchroniczną synchronizację stanów, cen, statusów i przesyłek.
 
-Jesteśmy otwarci na zgłoszenia pull-request w zakresie rozwiązania tego problemu.
+Sekrety aplikacji oraz tokeny OAuth nie mogą być zapisywane w repozytorium. Client Secret jest szyfrowany przez backend konfiguracji Magento, a tokeny Sandbox i Production są przechowywane oddzielnie. Po wklejeniu sekretu do komunikatora należy go obrócić w panelu aplikacji Allegro.
 
-</br>
-🚀 <strong>Dalszy rozwój rozszerzenia oferujemy odpłatnie.</strong> 
-</br> Zapraszmy do kontaktu - <a href="https://macopedia.com/pl/produkty/magento-2-allegro">Magento 2 & Allegro by Macopedia</a>
-<br> </br> 
+Dokumenty projektowe:
+
+- [Specyfikacja wymagań](SPECYFIKACJA_WYMAGAN.md)
+- [Plan implementacji](PLAN_IMPLEMENTACJI.md)
 
 ## Partners
 Our partners helps to develop this project.
@@ -190,7 +187,7 @@ Po uzupełnieniu wszystkich pół i kliknięciu "Zapisz" - zostanie wystawiony s
 W konfiguracji jest opcja włączenia zadania cron, które będzie usuwać z produktu ID oferty, która już nie istnieje na Allegro (Sklepy->Konfiguracja->Allegro->Konfiguracja->Import zamówień->Cron do czyszczenia starych rezerwacji jest włączony).
 
 ## DEBUG MODE
-Wtyczka oferuje możliwość logowania wszystkich danych przesyłanych do i z API Allegro. Włączyć ją można na stronie konfiguracji (sklepy->Konfiguracja->Allegro->Konfiguracja->Debug mode)
+Tryb debug zapisuje techniczny kontekst żądań (metoda, endpoint, status, request ID i nazwy pól). Nie zapisuje nagłówka Authorization, sekretów, tokenów ani pełnego body odpowiedzi. Włączyć go można na stronie konfiguracji (Sklepy → Konfiguracja → Allegro → Debug mode).
 ![debug_mode](README/allegroDebugMode.png)
 
 Dane logowane są do pliku /var/log/allegro-http-request.log
@@ -209,110 +206,60 @@ Import zamówień z błędami:
 Usunięcie mapowań produktów z nieistniejącymi ofertami:
 ``macopedia:allegro:clean-offers-mapping``
 
-## Konfiguracja MYSQL MQ
+Wyszukanie produktu katalogowego po EAN:
+``macopedia:allegro:product:search --ean [EAN]``
 
-konfiguracja w pliku config.php
-````
-<?php
-return [
-    'modules' => [
-    // ...
-    'Magento_Amqp' => 0, // important disable rabbitmq
-    'Magento_MysqlMq' => 1,
-    // ...
-    ]
-````
+Ponowienie lokalnego zapisu mapowań ofert utworzonych w Allegro:
+``macopedia:allegro:reconcile-offer-mappings --limit 100``
 
-konfiguracja kolejki w pliku env.php
+Lista operacji asynchronicznych, które wyczerpały pięć prób:
+``macopedia:allegro:async-failures --limit 100``
 
-````
-    'queue' => [
-        'topics' => [
-            'allegro.change.stock.db' => [
-                'schema' => [
-                    'schema_value' => 'Macopedia\Allegro\Api\Consumer\MessageInterface'
-                ],
-                'response_schema' => [
-                    'schema_value' => 'Macopedia\Allegro\Api\Consumer\MessageInterface'
-                ],
-                'publisher' => 'allegro.change.stock.db',
-            ],
-        ],
-        'publishers' => [
-            'allegro.change.stock.db' => [
-                'name' => 'allegro.change.stock.db',
-            ]
-        ],
-        'consumers' => [
-            'allegro.change.stock.db' => [
-                'queue' => 'allegro.api', // `name` from db table `queue`
-                'name' => 'allegro.change.stock.db',
-                'handlers' => [
-                    [
-                        'type' => 'Macopedia\Allegro\Model\Consumer',
-                        'method' => 'processMessage'
-                    ]
-                ],
-                'consumerInstance' => 'Magento\Framework\MessageQueue\Consumer',
-                'instance_type' => 'Magento\Framework\MessageQueue\Consumer',
-                'connection' => 'db',
-                'maxMessages' => 2000,
-                'max_messages' => 2000
-            ]
-        ],
-        'exchange_topic_to_queues_map' => [
-            'allegro.change.stock.db--allegro.change.stock.db' => [
-                'allegro.api' // `name` from db table `queue`
-            ]
-        ]
+## Konfiguracja MQ
+
+Moduł korzysta z połączenia wskazanego przez Magento w `queue/default_connection`. Bez konfiguracji brokera domyślnym połączeniem jest baza danych (`db`). Po skonfigurowaniu RabbitMQ Magento wybierze `amqp`. Nie należy ręcznie dopisywać tematów ani handlerów do `env.php` — są deklarowane przez moduł.
+
+Konsumenci dla MySQL MQ:
+
+```php
+'cron_consumers_runner' => [
+    'cron_run' => true,
+    'max_messages' => 1000,
+    'consumers' => [
+        'AllegroApiQueueDb',
+        'AllegroOrderStatusQueueDb',
+        'AllegroShipmentQueueDb',
     ],
-````
-konfiguracja consumera w pliku env.php
+],
+```
 
-````
-    'cron_consumers_runner' => [
-        'cron_run' => true,
-        'max_messages' => 20000,
-        'consumers' => [
-            'AllegroApiQueueDb'
-        ]
-    ]
-````
+Konsumenci dla RabbitMQ:
 
-## Konfiguracja RABBITMQ
-
-konfiguracja w pliku config.php
-````
-<?php
-return [
-    'modules' => [
-    // ...
-    'Magento_Amqp' => 1, // important enable rabbitmq
-    // ...
-    ]
-````
-
-konfiguracja kolejki w pliku env.php
-
-````
-    'queue' => [
-        'amqp'   => [
-            'host'     => 'amqp',
-            'port'     => '5672',
-            'user'     => 'guest',
-            'password' => 'guest',
-        ],
+```php
+'cron_consumers_runner' => [
+    'cron_run' => true,
+    'max_messages' => 1000,
+    'consumers' => [
+        'AllegroApiQueue',
+        'AllegroOrderStatusQueue',
+        'AllegroShipmentQueue',
     ],
-````
-konfiguracja consumera w pliku env.php
+],
+```
 
-````
-    'cron_consumers_runner' => [
-        'cron_run' => true,
-        'max_messages' => 20000,
-        'consumers' => [
-            'AllegroApiQueue'
-        ]
-    ]
-````
+Przykładowa konfiguracja brokera (wartości należy dostarczyć jako sekrety środowiskowe):
 
+```php
+'queue' => [
+    'default_connection' => 'amqp',
+    'amqp' => [
+        'host' => 'rabbitmq',
+        'port' => '5672',
+        'user' => '<secret>',
+        'password' => '<secret>',
+        'virtualhost' => '/',
+    ],
+],
+```
+
+Do ręcznego uruchomienia pojedynczego konsumenta służy `bin/magento queue:consumers:start <nazwa> --max-messages=100`.

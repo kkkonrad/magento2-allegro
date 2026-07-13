@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Macopedia\Allegro\Model\Api\Auth\Data;
 
 use Macopedia\Allegro\Api\Data\TokenInterface;
@@ -10,6 +12,7 @@ use Magento\Framework\DataObject;
  */
 class Token extends DataObject implements TokenInterface
 {
+    private const EXPIRATION_MARGIN_SECONDS = 300;
     const ACCESS_TOKEN_FIELD_NAME = 'access_token';
     const REFRESH_TOKEN_FIELD_NAME = 'refresh_token';
     const EXPIRATION_TIME_FIELD_NAME = 'expiration_time';
@@ -71,6 +74,6 @@ class Token extends DataObject implements TokenInterface
      */
     public function isExpired()
     {
-        return $this->getExpirationTime() <= (new \DateTime())->getTimestamp();
+        return $this->getExpirationTime() <= time() + self::EXPIRATION_MARGIN_SECONDS;
     }
 }

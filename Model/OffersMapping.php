@@ -67,7 +67,7 @@ class OffersMapping
             try {
                 $this->offers->get($allegroOfferId);
             } catch (Api\ClientResponseException $e) {
-                if ($e->getCode() == 404) {
+                if ($e->getHttpStatusCode() === 404) {
                     $product->setAllegroOfferId(null);
                     $product->save();
                 }

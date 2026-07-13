@@ -4,6 +4,7 @@
     <preference for="Macopedia\Allegro\Api\Data\TokenInterface" type="Macopedia\Allegro\Model\Api\Auth\Data\Token" />
     <preference for="Macopedia\Allegro\Api\ConsumerInterface" type="Macopedia\Allegro\Model\Consumer" />
     <preference for="Macopedia\Allegro\Api\Consumer\MessageInterface" type="Macopedia\Allegro\Model\Consumer\Message" />
+    <preference for="Macopedia\Allegro\Api\Consumer\EntityMessageInterface" type="Macopedia\Allegro\Model\Consumer\EntityMessage" />
     <preference for="Macopedia\Allegro\Api\ProductRepositoryInterface" type="Macopedia\Allegro\Model\ProductRepository" />
     <preference for="Macopedia\Allegro\Api\OrderRepositoryInterface" type="Macopedia\Allegro\Model\OrderRepository" />
     <preference for="Macopedia\Allegro\Api\OfferRepositoryInterface" type="Macopedia\Allegro\Model\OfferRepository" />
@@ -86,6 +87,8 @@
                 <item name="OrdersWithErrorsImport" xsi:type="object">Macopedia\Allegro\Console\Command\ImportOrdersWithErrors</item>
                 <item name="CleanOffersMapping" xsi:type="object">Macopedia\Allegro\Console\Command\CleanOffersMapping</item>
                 <item name="allegro_product_search" xsi:type="object">Macopedia\Allegro\Console\Command\SearchProductByEanCommand</item>
+                <item name="ReconcileOfferMappings" xsi:type="object">Macopedia\Allegro\Console\Command\ReconcileOfferMappings</item>
+                <item name="ListAsyncFailures" xsi:type="object">Macopedia\Allegro\Console\Command\ListAsyncFailures</item>
             </argument>
         </arguments>
     </type>

@@ -11,6 +11,7 @@ use Magento\Backend\App\Action;
  */
 class Index extends Action
 {
+    public const ADMIN_RESOURCE = 'Macopedia_Allegro::orders_errors';
     /**
      * @return \Magento\Framework\App\ResponseInterface|\Magento\Framework\Controller\ResultInterface|void
      */

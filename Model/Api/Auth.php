@@ -1,8 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Macopedia\Allegro\Model\Api;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Exception\RequestException;
 use Macopedia\Allegro\Api\Data\TokenInterface;
 use Macopedia\Allegro\Api\Data\TokenInterfaceFactory;
 use Macopedia\Allegro\Logger\Logger;
@@ -10,7 +14,6 @@ use Magento\Backend\Model\Url;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Http\Message\ResponseInterface;
-use GuzzleHttp\Exception\ClientException as HttpClientException;
 
 /**
  * Class responsible for authentication with Allegro API
@@ -41,6 +44,12 @@ class Auth
     /** @var Json */
     private $json;
 
+    /** @var ApiErrorResponseParser */
+    private $errorResponseParser;
+
+    /** @var OAuthStateManager */
+    private $stateManager;
+
     /**
      * @param Credentials $credentials
      * @param Client $client
@@ -56,7 +65,9 @@ class Auth
         Logger $logger,
         Url $url,
         ScopeConfigInterface $scopeConfig,
-        Json $json
+        Json $json,
+        ApiErrorResponseParser $errorResponseParser,
+        OAuthStateManager $stateManager
     ) {
         $this->credentials = $credentials;
         $this->client = $client;
@@ -65,6 +76,8 @@ class Auth
         $this->url = $url;
         $this->scopeConfig = $scopeConfig;
         $this->json = $json;
+        $this->errorResponseParser = $errorResponseParser;
+        $this->stateManager = $stateManager;
     }
 
     /**
@@ -80,12 +93,8 @@ class Auth
                 $this->getNewTokenData($authCode)
             );
 
-        } catch (HttpClientException $e) {
-            $this->logger->exception($e, "Error while getting new token: " . $e->getMessage());
-            throw new ClientException(
-                __('Error while getting new access token. Received response: "%1"', $e->getResponse()->getBody()),
-                $e
-            );
+        } catch (GuzzleException $e) {
+            throw $this->createAuthenticationException($e, 'authorization_code');
         }
 
         return $this->createTokenFromResponse($response);
@@ -104,12 +113,8 @@ class Auth
                 $this->getRefreshTokenData($token)
             );
 
-        } catch (HttpClientException $e) {
-            $this->logger->exception($e, "Error while refreshing access token" . $e->getMessage());
-            throw new ClientException(
-                __('Error while refreshing access token. Received response: "%1"', $e->getResponse()->getBody()),
-                $e
-            );
+        } catch (GuzzleException $e) {
+            throw $this->createAuthenticationException($e, 'refresh_token');
         }
 
         return $this->createTokenFromResponse($response);
@@ -163,8 +168,8 @@ class Auth
         $query = [
             'response_type' => 'code',
             'client_id' => $this->credentials->getClientId(),
-            'api-key' => $this->credentials->getApiKey(),
             'redirect_uri' => $this->getRedirectUrl(),
+            'state' => $this->stateManager->generate(),
         ];
 
         return $this->getOauthUrl() . '/authorize?' . http_build_query($query);
@@ -192,7 +197,6 @@ class Auth
         return $this->createData([
             'grant_type' => 'authorization_code',
             'code' => $authCode,
-            'api-key' => $this->credentials->getApiKey(),
             'redirect_uri' => $this->getRedirectUrl(),
         ]);
     }
@@ -233,5 +237,35 @@ class Auth
         return $this->credentials->isSandbox() ?
             $this->scopeConfig->getValue(self::SANDBOX_OAUTH_URL_CONFIG_KEY) :
             $this->scopeConfig->getValue(self::OAUTH_URL_CONFIG_KEY);
+    }
+
+    private function createAuthenticationException(
+        GuzzleException $exception,
+        string $grantType
+    ): ClientException {
+        $response = $exception instanceof RequestException ? $exception->getResponse() : null;
+        $statusCode = $response ? $response->getStatusCode() : null;
+        $errors = $response
+            ? $this->errorResponseParser->parse((string)$response->getBody())
+            : [];
+
+        $this->logger->apiFailure('Allegro OAuth request failed', [
+            'grant_type' => $grantType,
+            'status_code' => $statusCode,
+            'error_codes' => array_values(array_filter(array_column($errors, 'code'))),
+            'exception_type' => get_class($exception),
+        ]);
+
+        $message = $this->errorResponseParser->format($errors);
+        $cause = $exception instanceof \Exception ? $exception : null;
+
+        return new ClientException(
+            __(
+                'Could not authenticate with Allegro.%1',
+                $message !== '' ? ' ' . $message : ''
+            ),
+            $cause,
+            (int)$exception->getCode()
+        );
     }
 }

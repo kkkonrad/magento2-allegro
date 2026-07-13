@@ -2,9 +2,8 @@
 
 namespace Macopedia\Allegro\Cron;
 
-use Macopedia\Allegro\Logger\Logger;
-use Macopedia\Allegro\Model\OrderImporter;
-use Magento\Framework\App\Config\ScopeConfigInterface;
+use Macopedia\Allegro\Model\Configuration;
+use Macopedia\Allegro\Model\Api\TokenProvider;
 
 /**
  * Class responsible for importing orders from Allegro API
@@ -16,14 +15,20 @@ class RefreshToken
      */
     protected $tokenProvider;
 
+    /** @var Configuration */
+    private $configuration;
+
     /**
      * RefreshToken constructor.
-     * @param \Macopedia\Allegro\Model\Api\TokenProvider $tokenProvider
+     * @param TokenProvider $tokenProvider
+     * @param Configuration $configuration
      */
     public function __construct(
-        \Macopedia\Allegro\Model\Api\TokenProvider $tokenProvider
+        TokenProvider $tokenProvider,
+        Configuration $configuration
     ) {
         $this->tokenProvider = $tokenProvider;
+        $this->configuration = $configuration;
     }
 
     /**
@@ -31,6 +36,10 @@ class RefreshToken
      */
     public function execute()
     {
+        if (!$this->configuration->isTokenRefreshCronEnabled()) {
+            return;
+        }
+
         $this->tokenProvider->forceRefreshToken();
     }
 }

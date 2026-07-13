@@ -6,6 +6,7 @@
             <general>
                 <authentication_url>https://allegro.pl/auth/oauth</authentication_url>
                 <sandbox_authentication_url>https://allegro.pl.allegrosandbox.pl/auth/oauth</sandbox_authentication_url>
+                <token_refresh_cron_enabled>1</token_refresh_cron_enabled>
             </general>
             <credentials>
                 <client_secret backend_model="Magento\Config\Model\Config\Backend\Encrypted"/>
@@ -16,6 +17,10 @@
                 <tracking_number_sending_enabled>1</tracking_number_sending_enabled>
                 <reservations_enabled>1</reservations_enabled>
                 <reservations_cron_enabled>0</reservations_cron_enabled>
+                <retry_cron_enabled>1</retry_cron_enabled>
+                <async_retry_cron_enabled>1</async_retry_cron_enabled>
+                <offers_mapping_cron_enabled>1</offers_mapping_cron_enabled>
+                <offer_mapping_reconciliation_cron_enabled>1</offer_mapping_reconciliation_cron_enabled>
                 <overpayment_status>allegro_overpayment:new</overpayment_status>
                 <underpayment_status>allegro_underpayment:new</underpayment_status>
             </order>

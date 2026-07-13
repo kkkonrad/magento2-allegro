@@ -14,6 +14,7 @@ use Magento\Framework\View\Result\Page;
  */
 class Index extends Action
 {
+    public const ADMIN_RESOURCE = 'Macopedia_Allegro::reservations';
     /**
      * @return ResponseInterface|ResultInterface|void
      */

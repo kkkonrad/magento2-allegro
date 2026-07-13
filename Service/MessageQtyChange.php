@@ -7,7 +7,7 @@ use Macopedia\Allegro\Api\Consumer\MessageInterfaceFactory;
 use Macopedia\Allegro\Logger\Logger;
 use Macopedia\Allegro\Model\Configuration;
 use Magento\Framework\MessageQueue\PublisherInterface;
-use Magento\Framework\Module\Manager;
+use Magento\Framework\MessageQueue\DefaultValueProvider;
 
 /**
  * Product stock change observer
@@ -29,28 +29,28 @@ class MessageQtyChange
     /** @var Configuration */
     private $config;
 
-    /** @var Manager */
-    private $moduleManager;
+    /** @var DefaultValueProvider */
+    private $defaultValueProvider;
 
     /**
      * QtyChangeObserver constructor.
      * @param PublisherInterface $publisher
      * @param MessageInterfaceFactory $messageFactory
      * @param Logger $logger
-     * @param Manager $moduleManager
+     * @param DefaultValueProvider $defaultValueProvider
      * @param Configuration $config
      */
     public function __construct(
         PublisherInterface $publisher,
         MessageInterfaceFactory $messageFactory,
         Logger $logger,
-        Manager $moduleManager,
+        DefaultValueProvider $defaultValueProvider,
         Configuration $config
     ) {
         $this->publisher      = $publisher;
         $this->messageFactory = $messageFactory;
         $this->logger         = $logger;
-        $this->moduleManager  = $moduleManager;
+        $this->defaultValueProvider = $defaultValueProvider;
         $this->config         = $config;
     }
 
@@ -69,18 +69,17 @@ class MessageQtyChange
             $message = $this->messageFactory->create();
             $message->setProductId($productId);
 
-            if ($this->moduleManager->isEnabled('Magento_Amqp')) {
-                $this->publisher->publish(self::TOPIC_NAME, $message);
-                return;
-            }
-
-            if ($this->moduleManager->isEnabled('Magento_MysqlMq')) {
+            if ($this->defaultValueProvider->getConnection() === 'db') {
                 $this->publisher->publish(self::DB_TOPIC_NAME, $message);
                 return;
             }
 
+            $this->publisher->publish(self::TOPIC_NAME, $message);
         } catch (\Exception $e) {
-            $this->logger->exception($e);
+            $this->logger->apiFailure('Could not publish Allegro stock synchronization message', [
+                'product_id' => (int)$productId,
+                'exception_type' => get_class($e),
+            ]);
         }
     }
 }

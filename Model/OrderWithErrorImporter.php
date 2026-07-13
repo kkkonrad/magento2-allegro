@@ -19,6 +19,7 @@ use Magento\Framework\Data\Collection;
 class OrderWithErrorImporter extends AbstractOrderImporter
 {
     const PAGE_SIZE = 200;
+    const MAX_TRIES = 10;
 
     /** @var SearchCriteriaBuilder  */
     private $searchCriteriaBuilder;
@@ -61,7 +62,9 @@ class OrderWithErrorImporter extends AbstractOrderImporter
     {
         $lastPageNumber = ceil($this->orderLogRepository->getCount() / self::PAGE_SIZE);
 
-        for ($i = 1; $i <= $lastPageNumber; $i++) {
+        // Process backwards because successful imports delete rows from the source table.
+        // Ascending pagination would shift rows and skip records.
+        for ($i = (int)$lastPageNumber; $i >= 1; $i--) {
             $orders = $this->getOrderLogPage($i);
             foreach ($orders as $order) {
                 $checkoutFormId = $order->getCheckoutFormId();
@@ -79,7 +82,7 @@ class OrderWithErrorImporter extends AbstractOrderImporter
     private function getOrderLogPage(int $pageNumber)
     {
         $searchCriteria = $this->searchCriteriaBuilder
-            ->addFilter('number_of_tries', 10, 'lteq')
+            ->addFilter('number_of_tries', self::MAX_TRIES, 'lt')
             ->setPageSize(self::PAGE_SIZE)
             ->setCurrentPage($pageNumber)
             ->create();

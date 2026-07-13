@@ -5,6 +5,9 @@
             "external_id": true,
             "external_guid": true,
             "allegro_buyer_login": true
+        },
+        "constraint": {
+            "SALES_ORDER_ORDER_FROM_EXTERNAL_ID": true
         }
     },
     "sales_order_grid": {
@@ -70,6 +73,82 @@
         "constraint": {
             "FK_0DF36C9A02B0CEA1AF96F370F2C37537": true,
             "PRIMARY": true
+        }
+    },
+    "allegro_offer_mapping_reconciliation": {
+        "column": {
+            "entity_id": true,
+            "product_id": true,
+            "offer_id": true,
+            "allegro_product_id": true,
+            "seller_id": true,
+            "environment": true,
+            "status": true,
+            "attempts": true,
+            "last_error": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "ALLEGRO_OFFER_MAPPING_RECONCILIATION_STATUS_ATTEMPTS": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ALLEGRO_OFFER_MAPPING_RECONCILIATION_PRD_ID_CAT_PRD_ENTT_ENTT_ID": true,
+            "ALLEGRO_OFFER_MAPPING_RECONCILIATION_OFFER_ID_ENVIRONMENT": true
+        }
+    },
+    "allegro_offer_sync_state": {
+        "column": {
+            "entity_id": true,
+            "product_id": true,
+            "offer_id": true,
+            "environment": true,
+            "state_hash": true,
+            "updated_at": true
+        },
+        "index": {
+            "ALLEGRO_OFFER_SYNC_STATE_OFFER_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ALLEGRO_OFFER_SYNC_STATE_PRD_ID_CAT_PRD_ENTT_ENTT_ID": true,
+            "ALLEGRO_OFFER_SYNC_STATE_PRODUCT_ID_ENVIRONMENT": true
+        }
+    },
+    "allegro_outbound_sync_state": {
+        "column": {
+            "entity_id": true,
+            "operation": true,
+            "source_id": true,
+            "environment": true,
+            "state_hash": true,
+            "updated_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ALLEGRO_OUTBOUND_SYNC_STATE_OPERATION_SOURCE_ID_ENVIRONMENT": true
+        }
+    },
+    "allegro_async_failures": {
+        "column": {
+            "entity_id": true,
+            "operation": true,
+            "source_id": true,
+            "environment": true,
+            "status": true,
+            "attempts": true,
+            "last_error": true,
+            "next_attempt_at": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "ALLEGRO_ASYNC_FAILURES_STATUS_NEXT_ATTEMPT_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ALLEGRO_ASYNC_FAILURES_OPERATION_SOURCE_ID_ENVIRONMENT": true
         }
     }
 }

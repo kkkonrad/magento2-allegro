@@ -20,6 +20,7 @@ use Macopedia\Allegro\Model\ResourceModel\OrderLog\CollectionFactory;
  */
 class Import extends Action
 {
+    public const ADMIN_RESOURCE = 'Macopedia_Allegro::orders_retry';
     /** @var Processor */
     private $processor;
 

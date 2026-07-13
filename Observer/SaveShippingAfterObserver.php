@@ -2,11 +2,9 @@
 
 namespace Macopedia\Allegro\Observer;
 
-use Macopedia\Allegro\Logger\Logger;
 use Macopedia\Allegro\Model\Configuration;
 use Macopedia\Allegro\Model\OrderImporter\OriginOfOrder;
-use Macopedia\Allegro\Model\ResourceModel\Order\CheckoutForm;
-use Magento\Catalog\Model\ResourceModel\Product;
+use Macopedia\Allegro\Service\OutboundMessagePublisher;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Sales\Model\Order\Shipment;
@@ -16,59 +14,29 @@ use Magento\Sales\Model\Order\Shipment;
  */
 class SaveShippingAfterObserver implements ObserverInterface
 {
-    /** @var array */
-    private static $availableCarriers = [
-        'ups' => 'UPS',
-        'inpost' => 'INPOST',
-        'dhl' => 'DHL',
-        'gls' => 'GLS',
-        'ruch' => 'RUCH',
-        'poczta_polska' => 'POCZTA_POLSKA',
-        'dpd' => 'DPD',
-        'pocztex' => 'POCZTEX',
-        'fedex' => 'FEDEX',
-        'tnt_express' => 'TNT_EXPRESS',
-        'db_schenker' => 'DB_SCHENKER',
-        'raben' => 'RABEN',
-        'geis' => 'GEIS',
-        'dts' => 'DTS'
-    ];
-
-    /** @var Product */
-    private $productResource;
-
-    /** @var CheckoutForm */
-    private $checkoutFrom;
-
-    /** @var Logger */
-    private $logger;
-
     /** @var Configuration */
     private $config;
 
     /** @var OriginOfOrder */
     private $orderOrigin;
 
+    /** @var OutboundMessagePublisher */
+    private $messagePublisher;
+
     /**
      * SaveShippingAfterObserver constructor.
-     * @param Product $productResource
-     * @param CheckoutForm $checkoutFrom
-     * @param Logger $logger
      * @param Configuration $config
      * @param OriginOfOrder $orderOrigin
+     * @param OutboundMessagePublisher $messagePublisher
      */
     public function __construct(
-        Product $productResource,
-        CheckoutForm $checkoutFrom,
-        Logger $logger,
         Configuration $config,
-        OriginOfOrder $orderOrigin
+        OriginOfOrder $orderOrigin,
+        OutboundMessagePublisher $messagePublisher
     ) {
-        $this->productResource = $productResource;
-        $this->checkoutFrom = $checkoutFrom;
-        $this->logger = $logger;
         $this->config = $config;
         $this->orderOrigin = $orderOrigin;
+        $this->messagePublisher = $messagePublisher;
     }
 
     /**
@@ -90,37 +58,6 @@ class SaveShippingAfterObserver implements ObserverInterface
             return;
         }
 
-        $orderId = $order->getExternalId() ?: $order->getExtensionAttributes()->getExternalId();
-
-        $shipmentData = ['lineItems' => []];
-        foreach ($shipment->getItems() as $item) {
-            $allegroId = $item->getOrderItem()->getData('allegro_line_item_id');
-            if (!$allegroId) {
-                continue;
-            }
-            $shipmentData['lineItems'][] = ['id' => $allegroId];
-        }
-
-        foreach ($shipment->getTracks() as $shipmentTrack) {
-            $trackNumber = $shipmentTrack->getTrackNumber();
-            if (!$trackNumber) {
-                continue;
-            }
-
-            $carrierCode = $shipmentTrack->getCarrierCode();
-            if (isset(self::$availableCarriers[$carrierCode])) {
-                $shipmentData['carrierId'] = self::$availableCarriers[$carrierCode];
-            } else {
-                $shipmentData['carrierId'] = 'OTHER';
-                $shipmentData['carrierName'] = $carrierCode;
-            }
-            $shipmentData['waybill'] = $trackNumber;
-
-            try {
-                $this->checkoutFrom->shipment($orderId, $shipmentData);
-            } catch (\Exception $exception) {
-                $this->logger->exception($exception);
-            }
-        }
+        $this->messagePublisher->publishShipment((int)$shipment->getId());
     }
 }

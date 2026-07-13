@@ -20,6 +20,7 @@ use Macopedia\Allegro\Model\OrderLogRepository;
  */
 class Delete extends Action
 {
+    public const ADMIN_RESOURCE = 'Macopedia_Allegro::orders_retry';
     /** @var Logger */
     private $logger;
 

@@ -47,24 +47,29 @@ class AllegroOrderStatus
      */
     public function updateOrderStatus(Order $order)
     {
-        $statusesMapping = $this->scopeConfig->getValue(self::STATUSES_MAPPING_CONFIG_KEY);
-        $statusesMapping = json_decode($statusesMapping, true);
-        $statusesMapping = array_column($statusesMapping, 'allegro_code', 'magento_code');
-
-        $magentoStatus = $order->getStatus();
+        $targetStatus = $this->getTargetStatus($order);
         $checkoutFormId = $order->getExternalId() ?: $order->getExtensionAttributes()->getExternalId();
-        if (!isset($statusesMapping[$magentoStatus]) || !$checkoutFormId) {
-            return;
+        if ($targetStatus === null || !$checkoutFormId) {
+            return false;
         }
 
-        try {
-            $this->checkoutForm->changeOrderStatus($checkoutFormId, $statusesMapping[$magentoStatus]);
-            $this->logger->info('Status on Allegro for order ' . $order->getRemoteIp() . ' has been updated');
-        } catch (\Exception $e) {
-            $this->logger->exception(
-                $e,
-                'Error while trying to update order ' . $order->getIncrementId() . ' status on Allegro: ' . $e->getMessage()//phpcs:ignore
-            );
+        $this->checkoutForm->changeOrderStatus($checkoutFormId, $targetStatus);
+        $this->logger->info('Allegro order fulfillment status has been updated', [
+            'order_id' => (int)$order->getId(),
+        ]);
+        return true;
+    }
+
+    public function getTargetStatus(Order $order): ?string
+    {
+        $rawMapping = $this->scopeConfig->getValue(self::STATUSES_MAPPING_CONFIG_KEY);
+        $decoded = is_string($rawMapping) ? json_decode($rawMapping, true) : null;
+        if (!is_array($decoded)) {
+            return null;
         }
+
+        $statusesMapping = array_column($decoded, 'allegro_code', 'magento_code');
+        $status = $statusesMapping[(string)$order->getStatus()] ?? null;
+        return is_scalar($status) && (string)$status !== '' ? (string)$status : null;
     }
 }

@@ -44,12 +44,17 @@ class Authenticate extends Field
      */
     public function render(AbstractElement $element)
     {
+        $disconnectHtml = '';
         try {
 
             $token = $this->tokenProvider->getCurrent();
             $statusLabel = '<span style="color: green;">' . __('Active') . '</span>';
             $buttonLabel = __('Connect with another Allegro account');
             $color = '#e5efe5';
+            $disconnectHtml = '<form method="post" action="'
+                . $this->getUrl('allegro/system/disconnect') . '" style="display:inline-block;margin-left:8px">'
+                . '<input type="hidden" name="form_key" value="' . $this->getFormKey() . '"/>'
+                . '<button type="submit">' . __('Disconnect Allegro account') . '</button></form>';
 
         } catch (ClientException $e) {
 
@@ -60,7 +65,8 @@ class Authenticate extends Field
         }
 
         $html = '<div style="background-color: ' . $color . '; padding: 20px 30px;">' . __('Connection status:') . ' ' . $statusLabel . '</div>'//phpcs:ignore
-            . '<a href="' . $this->auth->getAuthUrl() . '"><button type="button">' . $buttonLabel . '</button></a>';
+            . '<a href="' . $this->auth->getAuthUrl() . '"><button type="button">' . $buttonLabel . '</button></a>'
+            . $disconnectHtml;
 
         return $html;
     }
