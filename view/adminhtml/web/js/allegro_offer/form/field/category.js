@@ -2,7 +2,11 @@ define([
     'jquery',
     'ko',
     'Magento_Ui/js/form/element/abstract',
-], function ($, ko, abstractElement) {
+    'Magento_Ui/js/modal/alert',
+    'mage/translate'
+], function ($, ko, abstractElement, alert, $t) {
+
+    'use strict';
 
     return abstractElement.extend({
 
@@ -17,6 +21,8 @@ define([
             this._addStackValueItem();
             this._loadRootCategories();
             this._initializeValue();
+
+            return this;
         },
 
         _initializeValue: function () {
@@ -29,11 +35,32 @@ define([
                 return;
             }
 
+            this._loadCategoryPath(this.initialValue);
+        },
+
+        selectCategory: function (categoryId) {
+            if (!categoryId) {
+                return;
+            }
+
+            this.initialValue = categoryId;
+            this.ready(false);
+            this.valuesStack([]);
+            this._addStackValueItem();
+            this._loadCategoryPath(categoryId);
+        },
+
+        _loadCategoryPath: function (categoryId) {
             var self = this;
+
             $.ajax({
-                url: '/rest/V1/allegro/categories/all-parents/' + this.initialValue,
+                url: this.ajaxUrl,
                 method: 'GET',
                 dataType: 'json',
+                data: {
+                    operation: 'parents',
+                    category_id: categoryId
+                },
                 beforeSend: function () {
                     self._showSpinner();
                 },
@@ -46,9 +73,7 @@ define([
                     if (response.statusText === 'abort') {
                         return;
                     }
-                    // TODO implement error popup
-                    console.log('error 2');
-                    console.log(response);
+                    self._showError(response, $t('Could not load the Allegro category path.'));
                 },
                 complete: function () {
                     self._hideSpinner();
@@ -58,10 +83,13 @@ define([
 
         _scheduleValueStackUpdate: function (newValue) {
             if (!this.categories()[newValue]) {
-                var self = this;
-                setTimeout(function () {
-                    self._scheduleValueStackUpdate(newValue);
-                }, 100);
+                var self = this,
+                    subscription = this.categories.subscribe(function (categories) {
+                        if (categories[newValue]) {
+                            subscription.dispose();
+                            self._scheduleValueStackUpdate(newValue);
+                        }
+                    });
                 return;
             }
 
@@ -146,22 +174,24 @@ define([
             }
 
             $.ajax({
-                url: '/rest/V1/allegro/categories/list/' + categoryId,
+                url: this.ajaxUrl,
                 method: 'GET',
                 dataType: 'json',
+                data: {
+                    operation: 'children',
+                    category_id: categoryId
+                },
                 beforeSend: function () {
                     self._showSpinner();
                 },
                 success: function (response) {
-                    self._addCategories(response, categoryId)
+                    self._addCategories(response, categoryId);
                 },
                 error: function (response) {
                     if (response.statusText === 'abort') {
                         return;
                     }
-                    // TODO implement error popup
-                    console.log('error 3');
-                    console.log(response);
+                    self._showError(response, $t('Could not load Allegro subcategories.'));
                 },
                 complete: function () {
                     self._hideSpinner();
@@ -172,9 +202,12 @@ define([
         _loadRootCategories: function () {
             var self = this;
             $.ajax({
-                url: '/rest/V1/allegro/categories/root-list/',
+                url: this.ajaxUrl,
                 method: 'GET',
                 dataType: 'json',
+                data: {
+                    operation: 'root'
+                },
                 beforeSend: function () {
                     self._showSpinner();
                 },
@@ -188,9 +221,7 @@ define([
                     if (response.statusText === 'abort') {
                         return;
                     }
-                    // TODO implement error popup
-                    console.log('error 4');
-                    console.log(response);
+                    self._showError(response, $t('Could not load Allegro root categories.'));
                 },
                 complete: function () {
                     self._hideSpinner();
@@ -226,6 +257,15 @@ define([
 
         _hideSpinner: function () {
             this.loading(this.loading()-1);
+        },
+
+        _showError: function (response, fallbackMessage) {
+            alert({
+                title: $t('Error'),
+                content: response.responseJSON && response.responseJSON.message
+                    ? response.responseJSON.message
+                    : fallbackMessage
+            });
         }
 
     });

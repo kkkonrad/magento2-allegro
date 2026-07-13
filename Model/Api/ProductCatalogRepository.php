@@ -6,7 +6,6 @@ use Macopedia\Allegro\Api\Data\ProductInterface;
 use Macopedia\Allegro\Api\ProductCatalogRepositoryInterface;
 use Macopedia\Allegro\Model\Api\ClientException;
 use Macopedia\Allegro\Model\ResourceModel\AbstractResource;
-use Macopedia\Allegro\Api\Data\TokenInterface;
 
 class ProductCatalogRepository implements ProductCatalogRepositoryInterface
 {
@@ -25,23 +24,15 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
     private $productFactory;
 
     /**
-     * @var TokenInterface
-     */
-    private $token;
-
-    /**
      * @param AbstractResource $resource
      * @param ProductFactory $productFactory
-     * @param TokenInterface $token
      */
     public function __construct(
         AbstractResource $resource,
-        ProductFactory $productFactory,
-        TokenInterface $token
+        ProductFactory $productFactory
     ) {
         $this->resource = $resource;
         $this->productFactory = $productFactory;
-        $this->token = $token;
     }
 
     /**
@@ -49,28 +40,46 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
      */
     public function search(array $parameters = []): array
     {
-        if(empty($parameters)) {
-            $parameters = $_GET;
+        if (isset($parameters['ean'])) {
+            $ean = trim((string)$parameters['ean']);
+            $this->validateGtin($ean);
+            unset($parameters['ean']);
+            $parameters['phrase'] = $ean;
+            $parameters['mode'] = 'GTIN';
         }
-        
-         try {
-            $queryParams = http_build_query($parameters);
 
-         
+        if (trim((string)($parameters['phrase'] ?? '')) === '') {
+            throw new ClientException(__('A product search phrase is required.'));
+        }
 
-            $response = $this->resource->requestGet(
-                self::API_ENDPOINT_SEARCH . '?' . $queryParams,
-            );
+        $response = $this->resource->requestGet(
+            self::API_ENDPOINT_SEARCH . '?' . http_build_query($parameters, '', '&', PHP_QUERY_RFC3986)
+        );
 
-
-            $products = [];
-            foreach ($response['products'] as $productData) {
+        $products = [];
+        foreach ((array)($response['products'] ?? []) as $productData) {
+            if (is_array($productData)) {
                 $products[] = $this->createProduct($productData);
             }
+        }
 
-            return $products;
-        } catch (ClientException $e) {
-            return [];
+        return $products;
+    }
+
+    private function validateGtin(string $gtin): void
+    {
+        if (!preg_match('/^(?:\d{8}|\d{12}|\d{13}|\d{14})$/', $gtin)) {
+            throw new ClientException(__('GTIN must contain 8, 12, 13 or 14 digits.'));
+        }
+
+        $digits = str_split($gtin);
+        $lastIndex = count($digits) - 1;
+        $sum = 0;
+        foreach (array_slice($digits, 0, -1) as $index => $digit) {
+            $sum += (int)$digit * (($lastIndex - $index) % 2 === 1 ? 3 : 1);
+        }
+        if ((10 - ($sum % 10)) % 10 !== (int)$digits[$lastIndex]) {
+            throw new ClientException(__('GTIN check digit is invalid.'));
         }
     }
 
@@ -81,7 +90,7 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
     {
         try {
             $response = $this->resource->requestGet(
-                str_replace('{productId}', $productId, self::API_ENDPOINT_GET)
+                str_replace('{productId}', rawurlencode($productId), self::API_ENDPOINT_GET)
             );
 
             return $this->createProduct($response);
@@ -118,9 +127,13 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
         /** @var ProductInterface $product */
         $product = $this->productFactory->create();
 
-        $product->setId($data['id'] ?? null);
-        $product->setName($data['name']);
-        $product->setCategory($data['category']['id']);
+        if (empty($data['id']) || empty($data['name']) || empty($data['category']['id'])) {
+            throw new ClientException(__('Allegro catalog returned an incomplete product.'));
+        }
+
+        $product->setId((string)$data['id']);
+        $product->setName((string)$data['name']);
+        $product->setCategory((string)$data['category']['id']);
         $product->setImages($data['images'] ?? []);
         $product->setParameters($data['parameters'] ?? []);
         $product->setDescription($data['description'] ?? []);

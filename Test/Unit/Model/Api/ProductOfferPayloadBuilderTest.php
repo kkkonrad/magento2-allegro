@@ -58,8 +58,8 @@ class ProductOfferPayloadBuilderTest extends TestCase
             ['id' => 'range', 'rangeValue' => ['from' => '1', 'to' => '10']],
         ], $payload['parameters']);
         self::assertSame([
-            ['url' => 'https://example.test/one.jpg'],
-            ['url' => 'https://example.test/two.jpg'],
+            'https://example.test/one.jpg',
+            'https://example.test/two.jpg',
         ], $payload['images']);
         self::assertSame('return-id', $payload['afterSalesServices']['returnPolicy']['id']);
         self::assertSame('magento-product-10', $payload['external']['id']);
@@ -88,6 +88,16 @@ class ProductOfferPayloadBuilderTest extends TestCase
         $this->expectExceptionMessage('Name is required');
 
         $this->builder->build(new ProductOffer());
+    }
+
+    public function testUpdatePayloadDoesNotChangePublicationWhenStatusIsOmitted(): void
+    {
+        $offer = $this->validOffer();
+        $offer->setStatus('');
+
+        $payload = $this->builder->build($offer);
+
+        self::assertArrayNotHasKey('publication', $payload);
     }
 
     private function validOffer(): ProductOffer

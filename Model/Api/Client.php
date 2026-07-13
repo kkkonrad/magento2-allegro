@@ -45,6 +45,12 @@ class Client
     /** @var ApiErrorResponseParser */
     private $errorResponseParser;
 
+    /** @var int|null */
+    private $lastResponseStatusCode;
+
+    /** @var array<string, string> */
+    private $lastResponseHeaders = [];
+
     /**
      * Client constructor.
      * @param Json $json
@@ -76,6 +82,9 @@ class Client
      */
     public function sendRequest(TokenInterface $token, Request $request)
     {
+        $this->lastResponseStatusCode = null;
+        $this->lastResponseHeaders = [];
+
         try {
             $json = $this->sendHttpRequest($token, $request);
         } catch (GuzzleException $e) {
@@ -227,6 +236,11 @@ class Client
             $attempt++;
             try {
                 $response = $client->request($method, $uri, $params);
+                $this->lastResponseStatusCode = $response->getStatusCode();
+                $this->lastResponseHeaders = [];
+                foreach ($response->getHeaders() as $name => $values) {
+                    $this->lastResponseHeaders[strtolower($name)] = implode(', ', $values);
+                }
                 break;
             } catch (GuzzleException $e) {
                 if (!$this->shouldRetry($e, $method, $attempt)) {
@@ -246,6 +260,16 @@ class Client
         }
 
         return $contents;
+    }
+
+    public function getLastResponseStatusCode(): ?int
+    {
+        return $this->lastResponseStatusCode;
+    }
+
+    public function getLastResponseHeader(string $name): string
+    {
+        return $this->lastResponseHeaders[strtolower($name)] ?? '';
     }
 
     private function createTransportException(

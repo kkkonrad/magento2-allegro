@@ -17,6 +17,7 @@ class ParameterDefinition extends DataObject implements ParameterDefinitionInter
     const NAME_FIELD_NAME = 'name';
     const UNIT_FIELD_NAME = 'unit';
     const REQUIRED_FIELD_NAME = 'required';
+    const DESCRIBES_PRODUCT_FIELD_NAME = 'describes_product';
     const VALUES_COUNT_FIELD_NAME = 'values_count';
     const TYPE_FIELD_NAME = 'type';
     const DICTIONARY_FIELD_NAME = 'dictionary';
@@ -85,6 +86,11 @@ class ParameterDefinition extends DataObject implements ParameterDefinitionInter
         $this->setData(self::REQUIRED_FIELD_NAME, $required);
     }
 
+    public function setDescribesProduct(bool $describesProduct)
+    {
+        $this->setData(self::DESCRIBES_PRODUCT_FIELD_NAME, $describesProduct);
+    }
+
     /**
      * @param \Macopedia\Allegro\Api\Data\ParameterDefinition\DictionaryItemInterface[] $dictionary
      * @return void
@@ -141,6 +147,11 @@ class ParameterDefinition extends DataObject implements ParameterDefinitionInter
     public function getRequired(): bool
     {
         return $this->getData(self::REQUIRED_FIELD_NAME);
+    }
+
+    public function getDescribesProduct(): bool
+    {
+        return (bool)$this->getData(self::DESCRIBES_PRODUCT_FIELD_NAME);
     }
 
     /**
@@ -222,6 +233,7 @@ class ParameterDefinition extends DataObject implements ParameterDefinitionInter
         }
 
         $this->setRequired($rawData['required'] ?? false);
+        $this->setDescribesProduct((bool)($rawData['options']['describesProduct'] ?? false));
         $this->setRestrictions($this->mapRestrictionsData($rawData['restrictions'] ?? []));
         $this->setDictionary($this->mapDictionaryData($rawData['dictionary'] ?? []));
     }

@@ -12,7 +12,7 @@ define([
     return Input.extend({
         defaults: {
             listens: {
-                '${ $.provider }:data.product_id': 'onProductIdChange'
+                '${ $.provider }:data.allegro.product_id': 'onProductIdChange'
             }
         },
 
@@ -20,212 +20,131 @@ define([
             this._super();
             this.validation = this.validation || {};
             this.validation['allegro-ean'] = true;
-            this.validation['max_text_length'] = 18;
+            this.validation.max_text_length = 18;
 
             return this;
         },
 
         searchProductByEan: function () {
-            console.log('searchProductByEan');
-            var self = this;
+            var self = this,
+                url;
+
             this.source.set('params.invalid', false);
             this.source.trigger('data.validate');
-            console.log(this.source.get('data.allegro'));
-            storage.get(
-                '/rest/V1/allegro/offer/search-product?ean=' + this.value()
-            ).done(function (response) {
-                
-                if (response[0] && response[0].id) {
-                    self.source.set('data.allegro.product_id', response[0].id);
-                    self.source.set('data.allegro.allegro_product_name', response[0].name);
-                   
-                    // Trigger category field update to automatically load attributes
-                    var categoryComponent = registry.get(self.parentName + '.category');
-                   
-                    if (categoryComponent) {
-                        // Set the initialValue and trigger the category loading process
-                        categoryComponent.initialValue = response[0].category;
-                        categoryComponent._initializeValue();
-                        console.log('Category component initialized with value:', response[0].category);
-                        
-                        // Wait for parameters to be loaded and then fill them
-                        if (response[0].parameters && response[0].parameters.length > 0) {
-                            self._waitForParametersAndFill(response[0].parameters);
-                        }
-                    } else {
-                        console.log('Category component not found at path:', self.parentName + '.category');
-                    }
-                   
-                    console.log('Product found and category set:', response[0].category);
-                    console.log('Product parameters:', response[0].parameters);
-                    console.log(self.source);
-                    
-                    // Show success message
-                    if (response[0].parameters && response[0].parameters.length > 0) {
-                        alert({
-                            title: $t('Success'),
-                            content: $t('Product found! Parameters will be automatically filled once category attributes are loaded.')
-                        });
-                    } else {
-                        alert({
-                            title: $t('Success'),
-                            content: $t('Product found! Category has been automatically set.')
-                        });
-                    }
-                } else {
-                    alert({
-                        title: $t('Error'),
-                        content: response.message || $t('Could not find product with specified EAN.')
-                    });
-                }
-            }).fail(function () {
-                alert({
-                    title: $t('Error'),
-                    content: $t('An error occurred while searching for the product.')
-                });
-            });
-        },
-
-        /**
-         * Wait for parameters to be loaded and then fill them
-         * @param {Array} productParameters - Parameters from Allegro product
-         */
-        _waitForParametersAndFill: function (productParameters) {
-            var self = this;
-            
-            // Wait for parameters table to be loaded
-            var parametersComponent = registry.get(self.parentName + '.parameters');
-            
-            if (!parametersComponent) {
-                console.log('Parameters component not found');
+            if (this.source.get('params.invalid')) {
                 return;
             }
 
-            console.log('Parameters component found:', parametersComponent);
-            console.log('Parameters component attributesLoaded:', parametersComponent.attributesLoaded());
-            console.log('Parameters component attributes length:', parametersComponent.attributes().length);
-
-            console.log('productParameters',productParameters);
-
-            // Create a map of parameter ID to parameter value for quick lookup
-            var parameterMap = {};
-            $.each(productParameters, function(index, param) {
-                param =  JSON.parse(param);
-                parameterMap[param.id] = param;
+            url = this.ajaxUrl + '?' + $.param({
+                operation: 'search',
+                ean: this.value()
             });
 
-            console.log('Parameter map created:', parameterMap);
+            storage.get(url).done(function (response) {
+                var product = response[0],
+                    categoryComponent;
 
-            // Function to wait for parameters to be loaded and then fill them
-            var waitForParametersAndFill = function(attempts) {
-                attempts = attempts || 0;
-                var maxAttempts = 50; // 10 seconds max (50 * 200ms)
-                
-                if (attempts >= maxAttempts) {
-                    console.log('Timeout waiting for parameters to be loaded');
-                    alert({
-                        title: $t('Warning'),
-                        content: $t('Parameters could not be automatically filled. Please fill them manually.')
-                    });
+                if (!product || !product.id) {
+                    self._showAlert('Error', $t('Could not find a product with the specified EAN.'));
                     return;
                 }
-                
-                console.log('Checking parameters component state - attempt ' + (attempts + 1));
-                console.log('attributesLoaded:', parametersComponent.attributesLoaded());
-                console.log('attributes length:', parametersComponent.attributes().length);
-                
-                if (parametersComponent.attributesLoaded() && parametersComponent.attributes().length > 0) {
-                    console.log('Parameters loaded, filling parameters...');
-                    
-                    var filledCount = 0;
-                    $.each(parametersComponent.attributes(), function(index, attribute) {
-                        var paramId = attribute.definition.id;
-                        var productParam = parameterMap[paramId];
-                        
-                        if (productParam) {
-                            console.log('Filling parameter', paramId, 'with value:', productParam);
-                            self._fillSingleParameter(attribute, productParam);
-                            filledCount++;
-                        } else {
-                            // Check if parameter is required but not found in product data
-                            if (attribute.definition.required) {
-                                console.log('Required parameter not found in product data:', paramId);
-                            }
-                        }
-                    });
-                    
-                    // Show success message after parameters are filled
-                    if (filledCount > 0) {
-                        alert({
-                            title: $t('Success'),
-                            content: $t('Parameters have been automatically filled with values from Allegro product.')
-                        });
-                    } else {
-                        console.log('No parameters were filled');
-                        alert({
-                            title: $t('Info'),
-                            content: $t('No parameters were automatically filled. Please check if the product has the required parameters.')
-                        });
-                    }
-                } else {
-                    // Wait a bit more and try again
-                    console.log('Waiting for parameters to be loaded... (attempt ' + (attempts + 1) + ')');
-                    setTimeout(function() {
-                        waitForParametersAndFill(attempts + 1);
-                    }, 200);
-                }
-            };
 
-            // Start the process
-            waitForParametersAndFill();
+                self.source.set('data.allegro.product_id', product.id);
+                self.source.set('data.allegro.allegro_product_name', product.name || '');
+                categoryComponent = registry.get(self.parentName + '.category');
+                if (!categoryComponent || typeof categoryComponent.selectCategory !== 'function') {
+                    self._showAlert('Error', $t('Could not initialize the Allegro category field.'));
+                    return;
+                }
+
+                categoryComponent.selectCategory(product.category);
+                self._fillParametersWhenReady(product.parameters || []);
+            }).fail(function (xhr) {
+                var message = xhr.responseJSON && xhr.responseJSON.message
+                    ? xhr.responseJSON.message
+                    : $t('An error occurred while searching the Allegro catalog.');
+
+                self._showAlert('Error', message);
+            });
         },
 
-        /**
-         * Fill a single parameter with value from Allegro product
-         * @param {Object} attribute - The attribute component
-         * @param {Object} productParam - Parameter data from Allegro product
-         */
-        _fillSingleParameter: function (attribute, productParam) {
-            console.log('Filling parameter', productParam.id, 'with value:', productParam);
+        _fillParametersWhenReady: function (productParameters) {
+            var self = this,
+                parametersComponent = registry.get(this.parentName + '.parameters'),
+                parameterMap = {};
 
-            // Handle different parameter types
-            if (productParam.rangeValue) {
-                // Range parameter
-                if (attribute.inputValueMin && attribute.inputValueMax) {
-                    attribute.inputValueMin(productParam.rangeValue.from || '');
-                    attribute.inputValueMax(productParam.rangeValue.to || '');
-                    console.log('Range parameter filled:', productParam.rangeValue);
-                }
-            } else if (productParam.valuesIds) {
-                // Values IDs parameter
-                if (attribute.inputValue) {
-                    if (Array.isArray(productParam.valuesIds)) {
-                        attribute.inputValue(productParam.valuesIds);
-                    } else {
-                        attribute.inputValue([productParam.valuesIds]);
-                    }
-                    console.log('Values IDs parameter filled:', productParam.valuesIds);
-                }
-            } else if (productParam.values) {
-                // Values parameter
-                if (attribute.inputValue) {
-                    // Clear existing values
-                    attribute.inputValue([]);
-                    
-                    // Add new values
-                    $.each(productParam.values, function(index, value) {
-                        attribute.addNextValue(value);
-                    });
-                    console.log('Values parameter filled:', productParam.values);
-                }
-            } else {
-                console.log('No value found for parameter:', productParam.id);
+            if (!parametersComponent || typeof parametersComponent.whenLoaded !== 'function') {
+                this._showAlert('Warning', $t('Parameters could not be loaded automatically.'));
+                return;
             }
+
+            $.each(productParameters, function (index, parameter) {
+                var normalized = self._normalizeParameter(parameter);
+
+                if (normalized && normalized.id) {
+                    parameterMap[normalized.id] = normalized;
+                }
+            });
+
+            parametersComponent.whenLoaded(function (attributes) {
+                var filledCount = 0;
+
+                $.each(attributes, function (index, attribute) {
+                    var productParameter = parameterMap[attribute.definition.id];
+
+                    if (productParameter) {
+                        self._fillSingleParameter(attribute, productParameter);
+                        filledCount++;
+                    }
+                });
+
+                self._showAlert(
+                    filledCount > 0 ? 'Success' : 'Info',
+                    filledCount > 0
+                        ? $t('The product and its catalog parameters were loaded successfully.')
+                        : $t('The product was found. Verify the required category parameters manually.')
+                );
+            });
+        },
+
+        _normalizeParameter: function (parameter) {
+            if (typeof parameter !== 'string') {
+                return parameter;
+            }
+
+            try {
+                return JSON.parse(parameter);
+            } catch (error) {
+                return null;
+            }
+        },
+
+        _fillSingleParameter: function (attribute, productParameter) {
+            if (productParameter.rangeValue && attribute.inputValueMin && attribute.inputValueMax) {
+                attribute.inputValueMin(productParameter.rangeValue.from || '');
+                attribute.inputValueMax(productParameter.rangeValue.to || '');
+            } else if (productParameter.valuesIds && attribute.inputValue) {
+                attribute.inputValue(Array.isArray(productParameter.valuesIds)
+                    ? productParameter.valuesIds
+                    : [productParameter.valuesIds]);
+            } else if (productParameter.values && attribute.inputValue) {
+                attribute.inputValue([]);
+                $.each(productParameter.values, function (index, value) {
+                    attribute.addNextValue(value);
+                });
+            }
+        },
+
+        _showAlert: function (title, content) {
+            alert({
+                title: $t(title),
+                content: content
+            });
         },
 
         onProductIdChange: function (value) {
             if (!value) {
-                this.source.set('data.allegro_product_name', '');
+                this.source.set('data.allegro.allegro_product_name', '');
             }
         }
     });

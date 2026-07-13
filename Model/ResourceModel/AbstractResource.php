@@ -148,6 +148,27 @@ abstract class AbstractResource
     }
 
     /**
+     * @return array
+     * @throws ClientException
+     * @throws ClientResponseException
+     * @throws ClientResponseErrorException
+     */
+    public function requestPatch($uri, array $params = [])
+    {
+        return $this->sendRequest($uri, 'PATCH', $params);
+    }
+
+    public function getLastResponseStatusCode(): ?int
+    {
+        return $this->client->getLastResponseStatusCode();
+    }
+
+    public function getLastResponseHeader(string $name): string
+    {
+        return $this->client->getLastResponseHeader($name);
+    }
+
+    /**
      * @param       $uri
      * @param array $params
      * @return Request

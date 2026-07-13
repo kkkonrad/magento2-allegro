@@ -6,8 +6,9 @@ define([
     'Macopedia_Allegro/js/allegro_offer/form/field/attributes-table/values',
     'Macopedia_Allegro/js/allegro_offer/form/field/attributes-table/values-ids',
     'Macopedia_Allegro/js/allegro_offer/form/field/attributes-table/range',
-    'mage/translate'
-], function ($, ko, abstractElement, validator, values, valuesIds, range) {
+    'mage/translate',
+    'Magento_Ui/js/modal/alert'
+], function ($, ko, abstractElement, validator, values, valuesIds, range, $t, alert) {
     'use strict';
 
     validator.addRule(
@@ -98,6 +99,7 @@ define([
         },
 
         _loadAttributes: function (category) {
+            this.attributesLoaded(false);
             if (this.attributesByCategoryId[category]) {
                 this._processResponse(this.attributesByCategoryId[category]);
                 return;
@@ -105,9 +107,13 @@ define([
 
             var self = this;
             this.loadAttributesAjax = $.ajax({
-                url: '/rest/V1/allegro/offer/get-parameters/' + category,
+                url: this.ajaxUrl,
                 method: 'GET',
                 dataType: 'json',
+                data: {
+                    operation: 'parameters',
+                    category_id: category
+                },
                 beforeSend: function () {
                     self._showSpinner();
                 },
@@ -119,9 +125,12 @@ define([
                     if (response.statusText === 'abort') {
                         return;
                     }
-                    // TODO implement error popup
-                    console.log('error');
-                    console.log(response);
+                    alert({
+                        title: $t('Error'),
+                        content: response.responseJSON && response.responseJSON.message
+                            ? response.responseJSON.message
+                            : $t('Could not load Allegro category parameters.')
+                    });
                 },
                 complete: function () {
                     self._hideSpinner();
@@ -136,11 +145,25 @@ define([
                 attributes.push(self._createAttribute(attributeDefinition));
             });
 
-            console.log('Processing response with', attributes.length, 'attributes');
             self.attributes(attributes);
             self._initializeValue();
             self.attributesLoaded(true);
-            console.log('Attributes loaded and initialized');
+        },
+
+        whenLoaded: function (callback) {
+            var subscription;
+
+            if (this.attributesLoaded()) {
+                callback(this.attributes());
+                return;
+            }
+
+            subscription = this.attributesLoaded.subscribe(function (loaded) {
+                if (loaded) {
+                    subscription.dispose();
+                    callback(this.attributes());
+                }
+            }, this);
         },
 
         _createAttribute: function (attributeDefinition) {

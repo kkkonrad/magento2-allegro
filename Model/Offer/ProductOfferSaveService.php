@@ -61,7 +61,10 @@ class ProductOfferSaveService
     {
         $request = $this->mapper->map($formData);
         $offer = $this->productOfferFactory->create();
-        if (isset($formData['id']) && is_scalar($formData['id']) && trim((string)$formData['id']) !== '') {
+        $isUpdate = isset($formData['id'])
+            && is_scalar($formData['id'])
+            && trim((string)$formData['id']) !== '';
+        if ($isUpdate) {
             $offer->setId(trim((string)$formData['id']));
         }
         $offer->setName($request->name)
@@ -69,7 +72,6 @@ class ProductOfferSaveService
             ->setSellerId($this->credentials->getClientId())
             ->setPrice($request->price)
             ->setQuantity($request->quantity)
-            ->setStatus('INACTIVE')
             ->setCategory($request->categoryId)
             ->setParameters($request->parameters)
             ->setSellingMode([
@@ -85,6 +87,10 @@ class ProductOfferSaveService
             ->setImages($this->uploadImages($request->images))
             ->setAfterSalesServices($request->afterSalesServices)
             ->setExternalId('magento-product-' . $request->magentoProductId);
+
+        if (!$isUpdate) {
+            $offer->setStatus('INACTIVE');
+        }
 
         if ($request->description !== null) {
             $offer->setDescription([

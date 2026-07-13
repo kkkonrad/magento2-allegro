@@ -14,6 +14,7 @@ class ProductOfferRepository implements ProductOfferRepositoryInterface
     private const API_ENDPOINT = '/sale/product-offers';
     private const API_ENDPOINT_GET = '/sale/product-offers/{offerId}';
     private const API_ENDPOINT_PRODUCT = '/sale/product-offers?product.id={productId}';
+    private const MAX_OPERATION_POLLS = 6;
 
     /** @var AbstractResource */
     private $resource;
@@ -51,10 +52,11 @@ class ProductOfferRepository implements ProductOfferRepositoryInterface
 
         try {
             if ($productOffer->getId()) {
-                $response = $this->resource->requestPut(
+                $response = $this->resource->requestPatch(
                     $this->offerUri($productOffer->getId()),
                     $data
                 );
+                $response = $this->waitForAcceptedOperation($response, $productOffer->getId());
             } else {
                 $response = $this->resource->requestPost(self::API_ENDPOINT, $data);
             }
@@ -73,6 +75,70 @@ class ProductOfferRepository implements ProductOfferRepositoryInterface
         }
 
         return (string)$response['id'];
+    }
+
+    private function waitForAcceptedOperation(array $response, string $offerId): array
+    {
+        if ($this->resource->getLastResponseStatusCode() !== 202) {
+            return $response;
+        }
+
+        $operationUri = $this->relativeUri($this->resource->getLastResponseHeader('Location'));
+        if ($operationUri === '') {
+            throw new ClientException(__('Allegro accepted the offer update without an operation URL.'));
+        }
+
+        for ($attempt = 0; $attempt < self::MAX_OPERATION_POLLS; $attempt++) {
+            $retryAfter = $this->retryAfterSeconds();
+            if ($retryAfter > 0) {
+                usleep($retryAfter * 1000000);
+            }
+
+            $operationResponse = $this->resource->requestGet($operationUri);
+            $statusCode = $this->resource->getLastResponseStatusCode();
+            if ($statusCode === 202) {
+                continue;
+            }
+
+            if ($statusCode === 303) {
+                $offerUri = $this->relativeUri($this->resource->getLastResponseHeader('Location'));
+                if ($offerUri !== '') {
+                    return $this->resource->requestGet($offerUri);
+                }
+            }
+
+            if (!empty($operationResponse['id'])) {
+                return $operationResponse;
+            }
+            if (!empty($operationResponse['offer']['id'])) {
+                return $this->resource->requestGet($this->offerUri((string)$operationResponse['offer']['id']));
+            }
+        }
+
+        throw new ClientException(
+            __('Allegro offer update for ID "%1" is still being processed. Try again later.', $offerId)
+        );
+    }
+
+    private function retryAfterSeconds(): int
+    {
+        $retryAfter = trim($this->resource->getLastResponseHeader('Retry-After'));
+        return ctype_digit($retryAfter) ? min((int)$retryAfter, 5) : 1;
+    }
+
+    private function relativeUri(string $location): string
+    {
+        if ($location === '') {
+            return '';
+        }
+
+        $path = parse_url($location, PHP_URL_PATH);
+        if (!is_string($path) || $path === '') {
+            return '';
+        }
+        $query = parse_url($location, PHP_URL_QUERY);
+
+        return ltrim($path, '/') . (is_string($query) && $query !== '' ? '?' . $query : '');
     }
 
     public function get(string $offerId): ProductOfferInterface

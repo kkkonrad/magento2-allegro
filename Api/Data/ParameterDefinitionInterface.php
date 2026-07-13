@@ -50,6 +50,12 @@ interface ParameterDefinitionInterface
     public function setRequired(bool $required);
 
     /**
+     * @param bool $describesProduct
+     * @return void
+     */
+    public function setDescribesProduct(bool $describesProduct);
+
+    /**
      * @param \Macopedia\Allegro\Api\Data\ParameterDefinition\RestrictionInterface[] $restrictions
      * @return void
      */
@@ -79,6 +85,13 @@ interface ParameterDefinitionInterface
      * @return bool
      */
     public function getRequired(): ?bool;
+
+    /**
+     * Whether the parameter belongs to the catalog product rather than the offer.
+     *
+     * @return bool
+     */
+    public function getDescribesProduct(): bool;
 
     /**
      * @return \Macopedia\Allegro\Api\Data\ParameterDefinition\DictionaryItemInterface[]

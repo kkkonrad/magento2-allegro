@@ -94,6 +94,7 @@
                     <item name="dataType" xsi:type="string">text</item>
                     <item name="formElement" xsi:type="string">input</item>
                     <item name="component" xsi:type="string">Macopedia_Allegro/js/allegro_offer/form/field/ean</item>
+                    <item name="ajaxUrl" xsi:type="url" path="allegro/catalog/data"/>
                 </item>
             </argument>
         </field>
@@ -219,6 +220,7 @@
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
                     <item name="component" xsi:type="string">Macopedia_Allegro/js/allegro_offer/form/field/category</item>
+                    <item name="ajaxUrl" xsi:type="url" path="allegro/catalog/data"/>
                     <item name="elementTmpl" xsi:type="string">Macopedia_Allegro/allegro_offer/form/field/category</item>
                     <item name="dataType" xsi:type="string">text</item>
                     <item name="label" xsi:type="string" translate="true">Select category</item>
@@ -233,6 +235,7 @@
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
                     <item name="component" xsi:type="string">Macopedia_Allegro/js/allegro_offer/form/field/attributes-table</item>
+                    <item name="ajaxUrl" xsi:type="url" path="allegro/catalog/data"/>
                     <item name="elementTmpl" xsi:type="string">Macopedia_Allegro/allegro_offer/form/field/attributes-table</item>
                     <item name="dataType" xsi:type="string">text</item>
                     <item name="label" xsi:type="string" translate="true">Attributes</item>

@@ -157,7 +157,7 @@ class ProductOfferPayloadBuilder
             $url = is_string($image) ? $image : (is_array($image) ? ($image['url'] ?? '') : '');
             $url = trim((string)$url);
             if ($url !== '') {
-                $normalized[] = ['url' => $url];
+                $normalized[] = $url;
             }
         }
 
