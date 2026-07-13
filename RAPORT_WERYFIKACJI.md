@@ -4,7 +4,7 @@
 
 - Magento 2.4.8-p5: `setup:upgrade`, `setup:db:status` i `setup:di:compile` zakończone sukcesem.
 - PHP 8.2: lint całego modułu oraz `git diff --check` bez błędów.
-- PHPUnit: 32 testy jednostkowe, 73 asercje, wynik PASS.
+- PHPUnit: 38 testów jednostkowych, 86 asercji, wynik PASS.
 - Zarejestrowane konsumery dla MySQL MQ i RabbitMQ: stan/cena, status zamówienia, przesyłka.
 - Rejestr retry ma backoff, limit pięciu prób, status `dead`, komunikat systemowy i komendę diagnostyczną.
 - Brak martwych operacji asynchronicznych w aktualnym środowisku: `macopedia:allegro:async-failures --limit=10`.
@@ -20,6 +20,8 @@
 | AC-04 | PASS części obsługi błędów | Sandbox zwrócił strukturalne błędy walidacji bez ujawnienia tokenu ani Client Secret. Pełny test komunikatu w panelu pozostaje do wykonania. |
 
 Aktualizacja draftu przez `PATCH /sale/product-offers/7781864283` zakończyła się sukcesem: cena zmieniła się z `10` na `11`, a status pozostał `INACTIVE`.
+
+Ponowny odczyt draftu zwrócił 10 błędów `validation.errors`. Moduł mapuje preferowane komunikaty `userMessage` wraz ze ścieżką pola, pokazuje ostrzeżenie po zapisie i blokuje publikację przed wysłaniem komendy aktywacji. Test blokady dla `7781864283` zakończył się wynikiem `blocked=true`, `command_sent=false`. Akcja publikacji korzysta teraz z Product Offer API i zachowuje fallback dla ofert utworzonych przez starszy endpoint.
 
 Test wykrył i pozwolił poprawić dwa błędy payloadu:
 

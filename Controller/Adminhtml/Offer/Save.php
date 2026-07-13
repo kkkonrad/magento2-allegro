@@ -72,7 +72,25 @@ class Save extends Offer
                         __('The offer was created, but its Magento mapping is pending automatic reconciliation.')
                     );
                 }
-                $this->messageManager->addSuccessMessage(__('Product offer saved successfully'));
+                if (!$result['validation_checked']) {
+                    $this->messageManager->addWarningMessage(
+                        __('Product offer saved, but its Allegro validation status could not be checked. Do not publish it before refreshing the offer.')
+                    );
+                } elseif ($result['validation_errors']) {
+                    $this->messageManager->addWarningMessage(
+                        __(
+                            'Product offer draft saved, but it cannot be published: %1',
+                            $this->summarizeValidationMessages($result['validation_errors'])
+                        )
+                    );
+                } else {
+                    $this->messageManager->addSuccessMessage(__('Product offer saved successfully'));
+                }
+                if ($result['validation_warnings']) {
+                    $this->messageManager->addWarningMessage(
+                        __('Allegro validation warnings: %1', $this->summarizeValidationMessages($result['validation_warnings']))
+                    );
+                }
                 return $this->createRedirectEditResult($offerId);
             }
 
@@ -153,6 +171,18 @@ class Save extends Offer
                 'exception_type' => get_class($exception),
             ]);
         }
+    }
+
+    private function summarizeValidationMessages(array $messages): string
+    {
+        $messages = array_values(array_filter(array_map('strval', $messages)));
+        $visible = array_slice($messages, 0, 5);
+        $summary = implode(' ', $visible);
+        if (count($messages) > count($visible)) {
+            $summary .= ' ' . (string)__('And %1 more message(s).', count($messages) - count($visible));
+        }
+
+        return $summary;
     }
 
     /**

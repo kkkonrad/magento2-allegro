@@ -336,7 +336,7 @@ class Offer extends DataObject implements OfferInterface
      */
     public function canBePublished(): bool
     {
-        return in_array(
+        return $this->isValid() && in_array(
             $this->getPublicationStatus(),
             [
                 self::PUBLICATION_STATUS_INACTIVE,
@@ -580,9 +580,19 @@ class Offer extends DataObject implements OfferInterface
     {
         $result = [];
         foreach ($data as $error) {
-            $result[] = $error['message'] ?: $error['userMessage'];
+            if (!is_array($error)) {
+                continue;
+            }
+            $message = trim((string)($error['userMessage'] ?? $error['message'] ?? ''));
+            if ($message === '') {
+                continue;
+            }
+            $path = trim((string)($error['path'] ?? ''));
+            $result[] = $path !== '' && strtolower($path) !== 'null'
+                ? '[' . $path . '] ' . $message
+                : $message;
         }
-        return $result;
+        return array_values(array_unique($result));
     }
 
     /**

@@ -8,6 +8,7 @@ use Macopedia\Allegro\Api\Data\ImageInterface;
 use Macopedia\Allegro\Api\Data\ImageInterfaceFactory;
 use Macopedia\Allegro\Api\ImageRepositoryInterface;
 use Macopedia\Allegro\Api\ProductOfferRepositoryInterface;
+use Macopedia\Allegro\Logger\Logger;
 use Macopedia\Allegro\Model\Api\Credentials;
 use Macopedia\Allegro\Model\Api\ProductOfferFactory;
 use Macopedia\Allegro\Model\OfferMappingService;
@@ -36,6 +37,9 @@ class ProductOfferSaveService
     /** @var Credentials */
     private $credentials;
 
+    /** @var Logger */
+    private $logger;
+
     public function __construct(
         OfferFormDataMapper $mapper,
         ProductOfferFactory $productOfferFactory,
@@ -43,7 +47,8 @@ class ProductOfferSaveService
         ImageRepositoryInterface $imageRepository,
         ProductOfferRepositoryInterface $productOfferRepository,
         OfferMappingService $offerMappingService,
-        Credentials $credentials
+        Credentials $credentials,
+        Logger $logger
     ) {
         $this->mapper = $mapper;
         $this->productOfferFactory = $productOfferFactory;
@@ -52,10 +57,17 @@ class ProductOfferSaveService
         $this->productOfferRepository = $productOfferRepository;
         $this->offerMappingService = $offerMappingService;
         $this->credentials = $credentials;
+        $this->logger = $logger;
     }
 
     /**
-     * @return array{offer_id:string,mapping_saved:bool}
+     * @return array{
+     *     offer_id:string,
+     *     mapping_saved:bool,
+     *     validation_checked:bool,
+     *     validation_errors:string[],
+     *     validation_warnings:string[]
+     * }
      */
     public function execute(array $formData): array
     {
@@ -107,7 +119,31 @@ class ProductOfferSaveService
             $request->catalogProductId
         );
 
-        return ['offer_id' => $offerId, 'mapping_saved' => $mappingSaved];
+        $validationChecked = false;
+        $validationErrors = [];
+        $validationWarnings = [];
+        try {
+            $savedOffer = $this->productOfferRepository->get($offerId);
+            $validationChecked = true;
+            $validationErrors = $savedOffer->getValidationErrors();
+            $validationWarnings = $savedOffer->getValidationWarnings();
+        } catch (LocalizedException $exception) {
+            // The Allegro write and local mapping already succeeded. A temporary
+            // validation read failure must not encourage the operator to retry
+            // creation and produce a duplicate offer.
+            $this->logger->apiFailure('Could not verify saved Allegro offer validation', [
+                'offer_id' => $offerId,
+                'exception_type' => get_class($exception),
+            ]);
+        }
+
+        return [
+            'offer_id' => $offerId,
+            'mapping_saved' => $mappingSaved,
+            'validation_checked' => $validationChecked,
+            'validation_errors' => $validationErrors,
+            'validation_warnings' => $validationWarnings,
+        ];
     }
 
     private function uploadImages(array $imagesData): array

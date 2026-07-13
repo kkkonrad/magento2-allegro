@@ -201,4 +201,26 @@ interface ProductOfferInterface
      * @return $this
      */
     public function setAttachments(array $attachments): self;
-} 
+
+    /**
+     * @return string[]
+     */
+    public function getValidationErrors(): array;
+
+    /**
+     * @param string[] $errors
+     * @return $this
+     */
+    public function setValidationErrors(array $errors): self;
+
+    /**
+     * @return string[]
+     */
+    public function getValidationWarnings(): array;
+
+    /**
+     * @param string[] $warnings
+     * @return $this
+     */
+    public function setValidationWarnings(array $warnings): self;
+}

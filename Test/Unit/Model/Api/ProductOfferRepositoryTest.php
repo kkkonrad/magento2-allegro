@@ -8,8 +8,10 @@ use Macopedia\Allegro\Logger\Logger;
 use Macopedia\Allegro\Model\Api\ProductOfferFactory;
 use Macopedia\Allegro\Model\Api\ProductOfferPayloadBuilder;
 use Macopedia\Allegro\Model\Api\ProductOfferRepository;
+use Macopedia\Allegro\Model\Api\ClientResponseException;
 use Macopedia\Allegro\Model\Data\ProductOffer;
 use Macopedia\Allegro\Model\ResourceModel\AbstractResource;
+use Magento\Framework\Exception\NoSuchEntityException;
 use PHPUnit\Framework\TestCase;
 
 class ProductOfferRepositoryTest extends TestCase
@@ -53,14 +55,62 @@ class ProductOfferRepositoryTest extends TestCase
         self::assertSame('offer-1', $this->repository($resource)->save($offer));
     }
 
+    public function testGetMapsReadableValidationErrorsAndWarnings(): void
+    {
+        $resource = $this->createMock(AbstractResource::class);
+        $resource->method('requestGet')->willReturn([
+            'id' => 'offer-1',
+            'validation' => [
+                'errors' => [
+                    [
+                        'message' => 'Technical message',
+                        'userMessage' => 'Uzupełnij markę.',
+                        'path' => 'parameters',
+                    ],
+                    ['message' => 'Configure return policy.', 'path' => 'null'],
+                    ['message' => ''],
+                ],
+                'warnings' => [
+                    ['userMessage' => 'Sprawdź opis.', 'path' => 'description'],
+                ],
+            ],
+        ]);
+
+        $offer = $this->repository($resource)->get('offer-1');
+
+        self::assertSame(
+            ['[parameters] Uzupełnij markę.', 'Configure return policy.'],
+            $offer->getValidationErrors()
+        );
+        self::assertSame(['[description] Sprawdź opis.'], $offer->getValidationWarnings());
+    }
+
+    public function testGetMapsNotFoundResponseToNoSuchEntityException(): void
+    {
+        $resource = $this->createMock(AbstractResource::class);
+        $resource->method('requestGet')->willThrowException(
+            new ClientResponseException(__('Not found'), null, 0, 404)
+        );
+
+        $this->expectException(NoSuchEntityException::class);
+
+        $this->repository($resource)->get('missing-offer');
+    }
+
     private function repository(AbstractResource $resource): ProductOfferRepository
     {
         $builder = $this->createMock(ProductOfferPayloadBuilder::class);
         $builder->method('build')->willReturn(['name' => 'Updated']);
+        $factory = $this->createMock(ProductOfferFactory::class);
+        $factory->method('create')->willReturnCallback(
+            static function (): ProductOffer {
+                return new ProductOffer();
+            }
+        );
 
         return new ProductOfferRepository(
             $resource,
-            $this->createMock(ProductOfferFactory::class),
+            $factory,
             $builder,
             $this->createMock(Logger::class)
         );

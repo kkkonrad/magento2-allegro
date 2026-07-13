@@ -8,6 +8,7 @@ use Macopedia\Allegro\Api\Data\ProductOfferInterface;
 use Macopedia\Allegro\Api\ProductOfferRepositoryInterface;
 use Macopedia\Allegro\Logger\Logger;
 use Macopedia\Allegro\Model\ResourceModel\AbstractResource;
+use Magento\Framework\Exception\NoSuchEntityException;
 
 class ProductOfferRepository implements ProductOfferRepositoryInterface
 {
@@ -147,7 +148,7 @@ class ProductOfferRepository implements ProductOfferRepositoryInterface
             $response = $this->resource->requestGet($this->offerUri($offerId));
         } catch (ClientResponseException $e) {
             if ($e->getHttpStatusCode() === 404) {
-                throw new ClientException(__('Product offer with ID "%1" does not exist.', $offerId), $e);
+                throw new NoSuchEntityException(__('Product offer with ID "%1" does not exist.', $offerId), $e);
             }
             throw $e;
         }
@@ -250,8 +251,37 @@ class ProductOfferRepository implements ProductOfferRepositoryInterface
         if (!empty($data['attachments']) && is_array($data['attachments'])) {
             $productOffer->setAttachments($data['attachments']);
         }
+        $productOffer->setValidationErrors(
+            $this->mapValidationMessages((array)($data['validation']['errors'] ?? []))
+        );
+        $productOffer->setValidationWarnings(
+            $this->mapValidationMessages((array)($data['validation']['warnings'] ?? []))
+        );
 
         return $productOffer;
+    }
+
+    private function mapValidationMessages(array $items): array
+    {
+        $messages = [];
+        foreach ($items as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $message = trim((string)($item['userMessage'] ?? $item['message'] ?? ''));
+            if ($message === '') {
+                continue;
+            }
+
+            $path = trim((string)($item['path'] ?? ''));
+            if ($path !== '' && strtolower($path) !== 'null') {
+                $message = '[' . $path . '] ' . $message;
+            }
+            $messages[] = $message;
+        }
+
+        return array_values(array_unique($messages));
     }
 
     private function mapDeliveryOptions(array $delivery): array

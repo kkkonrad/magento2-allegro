@@ -109,6 +109,26 @@ class ProductOffer extends DataObject implements ProductOfferInterface
         return $this->setData('status', $status);
     }
 
+    public function getValidationErrors(): array
+    {
+        return $this->getData('validation_errors') ?? [];
+    }
+
+    public function setValidationErrors(array $errors): self
+    {
+        return $this->setData('validation_errors', $errors);
+    }
+
+    public function getValidationWarnings(): array
+    {
+        return $this->getData('validation_warnings') ?? [];
+    }
+
+    public function setValidationWarnings(array $warnings): self
+    {
+        return $this->setData('validation_warnings', $warnings);
+    }
+
     /**
      * @return array
      */
@@ -312,4 +332,4 @@ class ProductOffer extends DataObject implements ProductOfferInterface
     {
         return $this->setData('attachments', $attachments);
     }
-} 
+}
