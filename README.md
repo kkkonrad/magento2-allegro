@@ -6,11 +6,9 @@ Sekrety aplikacji oraz tokeny OAuth nie mogą być zapisywane w repozytorium. Cl
 
 Dokumenty projektowe:
 
-- [Źródła GitHub Wiki](wiki/Home.md)
 - [Instrukcja uruchomienia i checklista administratora](INSTRUKCJA_URUCHOMIENIA.md)
 - [Specyfikacja wymagań](SPECYFIKACJA_WYMAGAN.md)
 - [Plan implementacji](PLAN_IMPLEMENTACJI.md)
-- [Instrukcja publikacji Wiki](WIKI_PUBLISHING.md)
 
 ## Partners
 Our partners helps to develop this project.
