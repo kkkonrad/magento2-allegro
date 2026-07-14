@@ -92,6 +92,17 @@ class Product extends DataObject implements ProductInterface
         return $this->setData('parameters', $parameters);
     }
 
+    public function getGtin(): ?string
+    {
+        $gtin = $this->getData('gtin');
+        return $gtin !== null && $gtin !== '' ? (string)$gtin : null;
+    }
+
+    public function setGtin(?string $gtin): self
+    {
+        return $this->setData('gtin', $gtin);
+    }
+
     /**
      * @return array
      */
@@ -108,4 +119,4 @@ class Product extends DataObject implements ProductInterface
     {
         return $this->setData('description', $description);
     }
-} 
+}

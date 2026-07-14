@@ -86,15 +86,38 @@
                 </item>
             </argument>
         </field>
+        <field name="product_id">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="visible" xsi:type="boolean">false</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="dataScope" xsi:type="string">product_id</item>
+                </item>
+            </argument>
+        </field>
         <field name="ean">
             <argument name="data" xsi:type="array">
                 <item name="config" xsi:type="array">
-                    <item name="label" xsi:type="string" translate="true">EAN</item>
+                    <item name="label" xsi:type="string" translate="true">GTIN / EAN</item>
                     <item name="visible" xsi:type="boolean">true</item>
                     <item name="dataType" xsi:type="string">text</item>
                     <item name="formElement" xsi:type="string">input</item>
                     <item name="component" xsi:type="string">Macopedia_Allegro/js/allegro_offer/form/field/ean</item>
                     <item name="ajaxUrl" xsi:type="url" path="allegro/catalog/data"/>
+                    <item name="elementTmpl" xsi:type="string">Macopedia_Allegro/allegro_offer/form/field/ean-with-button</item>
+                </item>
+            </argument>
+        </field>
+        <field name="allegro_product_name">
+            <argument name="data" xsi:type="array">
+                <item name="config" xsi:type="array">
+                    <item name="label" xsi:type="string" translate="true">Allegro Product</item>
+                    <item name="visible" xsi:type="boolean">true</item>
+                    <item name="dataType" xsi:type="string">text</item>
+                    <item name="formElement" xsi:type="string">input</item>
+                    <item name="disabled" xsi:type="boolean">true</item>
+                    <item name="notice" xsi:type="string" translate="true">Product selected from the Allegro Catalog.</item>
                 </item>
             </argument>
         </field>

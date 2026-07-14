@@ -70,6 +70,24 @@ class Data extends Action implements HttpGetActionInterface
                     $this->productCatalogRepository->search(['ean' => (string)$this->getRequest()->getParam('ean')]),
                     ProductInterface::class
                 );
+            } elseif ($operation === 'searchByName') {
+                $parameters = [
+                    'phrase' => (string)$this->getRequest()->getParam('phrase'),
+                    'language' => 'pl-PL',
+                ];
+                $categoryId = trim((string)$this->getRequest()->getParam('category_id'));
+                if ($categoryId !== '') {
+                    $parameters['category.id'] = $categoryId;
+                }
+                $data = $this->serializeList(
+                    $this->productCatalogRepository->search($parameters),
+                    ProductInterface::class
+                );
+            } elseif ($operation === 'product') {
+                $data = $this->dataObjectProcessor->buildOutputDataArray(
+                    $this->productCatalogRepository->get((string)$this->getRequest()->getParam('product_id')),
+                    ProductInterface::class
+                );
             } elseif ($operation === 'root') {
                 $data = $this->serializeList($this->categoryRepository->getRootList(), CategoryInterface::class);
             } elseif ($operation === 'children') {

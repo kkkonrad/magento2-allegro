@@ -52,6 +52,22 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
             throw new ClientException(__('A product search phrase is required.'));
         }
 
+        $phrase = trim((string)$parameters['phrase']);
+        if (mb_strlen($phrase) < 3 || mb_strlen($phrase) > 1024) {
+            throw new ClientException(__('Product search phrase must contain between 3 and 1024 characters.'));
+        }
+        $parameters['phrase'] = $phrase;
+
+        if (isset($parameters['language']) && !in_array($parameters['language'], [
+            'pl-PL', 'en-US', 'uk-UA', 'sk-SK', 'cs-CZ', 'hu-HU'
+        ], true)) {
+            throw new ClientException(__('Unsupported Allegro catalog language.'));
+        }
+
+        if (isset($parameters['category.id']) && !preg_match('/^\d+$/', (string)$parameters['category.id'])) {
+            throw new ClientException(__('Allegro category ID must contain digits only.'));
+        }
+
         $response = $this->resource->requestGet(
             self::API_ENDPOINT_SEARCH . '?' . http_build_query($parameters, '', '&', PHP_QUERY_RFC3986)
         );
@@ -136,9 +152,30 @@ class ProductCatalogRepository implements ProductCatalogRepositoryInterface
         $product->setCategory((string)$data['category']['id']);
         $product->setImages($data['images'] ?? []);
         $product->setParameters($data['parameters'] ?? []);
+        $product->setGtin($this->extractGtin($data['parameters'] ?? []));
         $product->setDescription($data['description'] ?? []);
 
         return $product;
+    }
+
+    private function extractGtin(array $parameters): ?string
+    {
+        foreach ($parameters as $parameter) {
+            if (!is_array($parameter) || empty($parameter['options']['isGTIN'])) {
+                continue;
+            }
+
+            foreach (['values', 'valuesLabels'] as $field) {
+                foreach ((array)($parameter[$field] ?? []) as $value) {
+                    $gtin = preg_replace('/\D+/', '', (string)$value);
+                    if (preg_match('/^(?:\d{8}|\d{12}|\d{13}|\d{14})$/', (string)$gtin)) {
+                        return (string)$gtin;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

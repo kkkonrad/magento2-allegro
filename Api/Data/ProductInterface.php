@@ -60,6 +60,17 @@ interface ProductInterface
     public function setParameters(array $parameters): self;
 
     /**
+     * @return string|null
+     */
+    public function getGtin(): ?string;
+
+    /**
+     * @param string|null $gtin
+     * @return $this
+     */
+    public function setGtin(?string $gtin): self;
+
+    /**
      * @return string
      */
     public function getDescription(): array;
@@ -69,4 +80,4 @@ interface ProductInterface
      * @return $this
      */
     public function setDescription(array $description): self;
-} 
+}

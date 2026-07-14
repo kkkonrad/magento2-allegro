@@ -164,6 +164,8 @@ Za pomocą wtyczki możemy wystawiać produkty z Magento na Allegro. Aby to zrob
 
 Kod GTIN/EAN musi być prawidłowy pod względem cyfry kontrolnej i istnieć w Katalogu Produktów Allegro/GS1. Domyślnym atrybutem tworzonym przez moduł jest `ean`; można wskazać inny atrybut w konfiguracji. Cennik dostaw, warunki zwrotów i reklamacji oraz dane GPSR są danymi konta sprzedawcy i muszą zostać utworzone w Allegro przed publikacją.
 
+Jeżeli GTIN nie jest znany, pod polem EAN/GTIN można wyszukać produkt po nazwie w Katalogu Allegro. Formularz pokazuje listę kandydatów z obrazem, nazwą, GTIN i kategorią. Operator musi wybrać dokładny wariant produktu; moduł nie przypisuje automatycznie pierwszego wyniku. Wybór uzupełnia GTIN, identyfikator produktu katalogowego, kategorię i dostępne parametry. Jeżeli wynik skrócony nie zawiera GTIN, moduł pobiera szczegóły wybranego produktu przed zastosowaniem danych.
+
 Po wprowadzeniu wymaganych danych można zacząć wystawiać oferty z poziomu Magento.
 Należy wybrać produkt, który chcemy wstawić, wejść na jego stronę i wybrać zdjęcie do oferty Allegro. Żeby, to zrobić wystarczy kliknąć zdjęcie, zaznaczyć rolę 'Allegro', a następnie zapisać produkt.
 ![add_to_allegro](README/imageRole.png)

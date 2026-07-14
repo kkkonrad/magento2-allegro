@@ -31,5 +31,59 @@
         <button type="button" class="action-secondary" data-bind="click: searchProductByEan, disable: !value()" onclick="event.preventDefault();">
             <span data-bind="i18n: 'Search in Allegro'"></span>
         </button>
+
+        <div class="admin__field" style="margin-top: 2rem;">
+            <label class="label admin__field-label">
+                <span data-bind="i18n: 'Find GTIN by product name'"></span>
+            </label>
+            <div class="admin__field-control">
+                <input class="input-text admin__control-text" type="text"
+                       maxlength="1024"
+                       data-bind="
+                            value: catalogPhrase,
+                            valueUpdate: 'input',
+                            event: {keydown: handleCatalogSearchKey},
+                            attr: {placeholder: $t('Enter at least 3 characters')}
+                       "/>
+                <button type="button" class="action-secondary"
+                        data-bind="click: searchProductByName, disable: searching() || catalogPhrase().trim().length < 3">
+                    <span data-bind="i18n: 'Search by name'"></span>
+                </button>
+            </div>
+        </div>
+
+        <div class="message message-info" data-bind="visible: searchMessage, text: searchMessage"></div>
+
+        <div class="admin__data-grid-wrap" data-bind="visible: searchResults().length">
+            <table class="data-grid">
+                <thead>
+                <tr>
+                    <th class="data-grid-th"><span data-bind="i18n: 'Image'"></span></th>
+                    <th class="data-grid-th"><span data-bind="i18n: 'Product'"></span></th>
+                    <th class="data-grid-th"><span data-bind="i18n: 'GTIN'"></span></th>
+                    <th class="data-grid-th"><span data-bind="i18n: 'Category ID'"></span></th>
+                    <th class="data-grid-th"><span data-bind="i18n: 'Action'"></span></th>
+                </tr>
+                </thead>
+                <tbody data-bind="foreach: searchResults">
+                <tr class="data-row">
+                    <td>
+                        <!-- ko if: $parent.productImage($data) -->
+                        <img width="64" height="64" alt="" data-bind="attr: {src: $parent.productImage($data)}"/>
+                        <!-- /ko -->
+                    </td>
+                    <td data-bind="text: name"></td>
+                    <td data-bind="text: gtin || $t('Load details')"></td>
+                    <td data-bind="text: category"></td>
+                    <td>
+                        <button type="button" class="action-secondary"
+                                data-bind="click: $parent.selectCatalogProduct.bind($parent), disable: $parent.searching">
+                            <span data-bind="i18n: 'Select product'"></span>
+                        </button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
-</div> 
+</div>
