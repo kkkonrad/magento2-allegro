@@ -26,7 +26,7 @@ class ProductOfferSaveServiceTest extends TestCase
         $mapper = $this->createMock(OfferFormDataMapper::class);
         $mapper->method('map')->willReturn(new OfferSaveRequest(
             42,
-            'catalog-product-id',
+            '00913892-b563-42e6-b343-95ba2935ba2a',
             'Test offer',
             10.0,
             2,
@@ -53,13 +53,21 @@ class ProductOfferSaveServiceTest extends TestCase
             ->setValidationErrors(['[parameters] Uzupełnij markę.'])
             ->setValidationWarnings(['[description] Sprawdź opis.']);
         $repository = $this->createMock(ProductOfferRepositoryInterface::class);
-        $repository->expects(self::once())->method('save')->willReturn('offer-1');
+        $repository->expects(self::once())
+            ->method('save')
+            ->with(self::callback(static function (ProductOffer $offer): bool {
+                return $offer->getProductId() === '00913892-b563-42e6-b343-95ba2935ba2a'
+                    && $offer->getProductParameters() === [];
+            }))
+            ->willReturn('offer-1');
         $repository->expects(self::once())->method('get')->with('offer-1')->willReturn($savedOffer);
 
         $mapping = $this->createMock(OfferMappingService::class);
         $mapping->method('saveMapping')->willReturn(true);
         $credentials = $this->createMock(Credentials::class);
         $credentials->method('getClientId')->willReturn('seller-id');
+        $brandResolver = $this->createMock(ProductBrandParameterResolver::class);
+        $brandResolver->expects(self::never())->method('resolve');
 
         $service = new ProductOfferSaveService(
             $mapper,
@@ -71,7 +79,7 @@ class ProductOfferSaveServiceTest extends TestCase
             $credentials,
             $this->createMock(Logger::class),
             $this->createMock(OfferSaveRequestValidator::class),
-            $this->createMock(ProductBrandParameterResolver::class)
+            $brandResolver
         );
 
         $result = $service->execute([]);

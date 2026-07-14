@@ -66,7 +66,6 @@ define([
         searchProductByName: function () {
             var self = this,
                 phrase = $.trim(this.catalogPhrase()),
-                categoryId = this.source.get('data.allegro.category') || '',
                 url;
 
             if (phrase.length < 3) {
@@ -79,8 +78,7 @@ define([
             this.searchMessage('');
             url = this.ajaxUrl + '?' + $.param({
                 operation: 'searchByName',
-                phrase: phrase,
-                category_id: categoryId
+                phrase: phrase
             });
 
             storage.get(url).done(function (response) {

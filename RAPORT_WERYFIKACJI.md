@@ -10,7 +10,7 @@ Pełny scenariusz E2E AC-01–AC-08 zakończył się wynikiem PASS. Oferta przes
 
 - `setup:upgrade --keep-generated` i `setup:db:status`: PASS.
 - `setup:di:compile`: PASS.
-- PHPUnit: 69 testów jednostkowych, 196 asercji: PASS.
+- PHPUnit: 69 testów jednostkowych, 197 asercji: PASS.
 - lint PHP całego modułu i `git diff --check`: PASS.
 - kontrola `dd`, `die`, `exit`, `var_dump` i `print_r` w kodzie produkcyjnym: PASS.
 - logi po finalnym buildzie: brak nowych błędów krytycznych i brak markerów sekretów. `exception.log` zachowuje wpisy z godz. 11:28 UTC po celowo nieudanych próbach uruchomienia instalatora testowego; przyczyny zostały usunięte, a późniejszy test integracyjny przeszedł.
@@ -40,6 +40,7 @@ Końcowy odczyt oferty potwierdził status `ENDED`, cenę `12.34` i ilość `2` 
 - OAuth z CSRF `state`, blokadą refreshu i statusem połączenia;
 - GTIN/EAN, konfigurowalna marka (`manufacturer` domyślnie), GPSR i dane wymagane przez Product Offer API;
 - wyszukiwanie produktu katalogowego po nazwie z listą kandydatów i wyborem GTIN; test Sandbox potwierdził odnalezienie właściwego produktu oraz GTIN;
+- przy podmianie GTIN istniejący produkt katalogowy jest źródłem prawdy dla marki i innych parametrów identyfikujących, co zapobiega błędom `PARAMETER_MISMATCH`;
 - jeden serwis zapisu oferty, walidator, builder payloadu i wyłączenie starej ścieżki `/sale/offers`;
 - dedykowane mapowanie produkt–oferta–konto–środowisko, reconciliation i walidacja ręcznego mapowania;
 - bezpieczne czyszczenie mapowań z `--dry-run` i usuwaniem wyłącznie po potwierdzonym 404;

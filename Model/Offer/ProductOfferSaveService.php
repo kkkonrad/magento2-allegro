@@ -90,6 +90,12 @@ class ProductOfferSaveService
         if ($isUpdate) {
             $offer->setId(trim((string)$formData['id']));
         }
+        $productParameters = $this->isCatalogProductUuid($request->catalogProductId)
+            ? []
+            : $this->brandParameterResolver->resolve(
+                $request->magentoProductId,
+                (int)$request->categoryId
+            );
         $offer->setName($request->name)
             ->setProductId($request->catalogProductId)
             ->setSellerId($this->credentials->getClientId())
@@ -97,10 +103,7 @@ class ProductOfferSaveService
             ->setQuantity($request->quantity)
             ->setCategory($request->categoryId)
             ->setParameters($request->parameters)
-            ->setProductParameters($this->brandParameterResolver->resolve(
-                $request->magentoProductId,
-                (int)$request->categoryId
-            ))
+            ->setProductParameters($productParameters)
             ->setSellingMode([
                 'format' => 'BUY_NOW',
                 'price' => ['amount' => (string)$request->price, 'currency' => 'PLN'],
@@ -166,6 +169,14 @@ class ProductOfferSaveService
             'validation_errors' => $validationErrors,
             'validation_warnings' => $validationWarnings,
         ];
+    }
+
+    private function isCatalogProductUuid(string $productId): bool
+    {
+        return (bool)preg_match(
+            '/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i',
+            $productId
+        );
     }
 
     private function uploadImages(array $imagesData): array
