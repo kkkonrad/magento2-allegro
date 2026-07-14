@@ -10,6 +10,58 @@ Dokumenty projektowe:
 - [Specyfikacja wymagań](SPECYFIKACJA_WYMAGAN.md)
 - [Plan implementacji](PLAN_IMPLEMENTACJI.md)
 
+## Instalacja
+
+### Wymagania
+
+- Magento 2.4 (`magento/framework ^103.0`)
+- PHP 8.1 lub nowszy, zgodny z używaną wersją Magento
+- rozszerzenia PHP `fileinfo` i `json`
+- dostęp do CLI Magento oraz działający cron
+- MySQL MQ albo RabbitMQ
+
+Wszystkie poniższe polecenia wykonuj z katalogu głównego Magento jako użytkownik systemowy obsługujący pliki aplikacji.
+
+### Instalacja przez Composer z repozytorium GitHub
+
+Dodaj repozytorium VCS i zainstaluj bieżącą gałąź `main`:
+
+```bash
+composer config repositories.macopedia-allegro vcs https://github.com/kkkonrad/magento2-allegro.git
+composer require macopedia/magento2-allegro:dev-main
+```
+
+Jawne wskazanie `dev-main` jest zalecane do czasu opublikowania oznaczonego wydania modułu.
+
+### Instalacja w `app/code`
+
+Alternatywnie sklonuj repozytorium bezpośrednio do katalogu modułu:
+
+```bash
+mkdir -p app/code/Macopedia
+git clone https://github.com/kkkonrad/magento2-allegro.git app/code/Macopedia/Allegro
+```
+
+### Włączenie modułu
+
+Po zainstalowaniu kodu wykonaj:
+
+```bash
+bin/magento module:enable Macopedia_Allegro
+bin/magento setup:upgrade
+bin/magento cache:flush
+bin/magento module:status Macopedia_Allegro
+```
+
+Na środowisku produkcyjnym wykonaj dodatkowo standardowe dla projektu kroki kompilacji i wdrożenia zasobów statycznych, przykładowo:
+
+```bash
+bin/magento setup:di:compile
+bin/magento setup:static-content:deploy
+```
+
+Następnie skonfiguruj kolejkę, przejdź do **Sklepy → Konfiguracja → Allegro → Configuration** i wykonaj OAuth zgodnie z [instrukcją uruchomienia](INSTRUKCJA_URUCHOMIENIA.md). Import zamówień oraz automatyczne synchronizacje pozostaw wyłączone do zakończenia konfiguracji i pierwszego testu na Sandboxie.
+
 ## Partners
 Our partners helps to develop this project.
 * [Macopedia.com](https://macopedia.com)
