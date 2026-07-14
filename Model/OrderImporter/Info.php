@@ -60,4 +60,18 @@ class Info
             implode("\n", $this->skippedIds)
         );
     }
+
+    public function hasErrors(): bool
+    {
+        return $this->errorsIds !== [];
+    }
+
+    public function getMetrics(): array
+    {
+        return [
+            'success' => count($this->successIds),
+            'errors' => count($this->errorsIds),
+            'skipped' => count($this->skippedIds),
+        ];
+    }
 }

@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.5/phpunit.xsd"
-         bootstrap="../../../../dev/tests/unit/framework/bootstrap.php"
-         cacheDirectory="../../../../var/phpunit-cache/macopedia-allegro"
+         xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/10.4/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
          colors="true"
-         failOnWarning="true">
+         cacheDirectory=".phpunit.cache">
     <testsuites>
-        <testsuite name="Macopedia Allegro Unit Tests">
+        <testsuite name="Macopedia Allegro unit tests">
             <directory suffix="Test.php">Test/Unit</directory>
         </testsuite>
     </testsuites>

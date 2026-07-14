@@ -186,6 +186,16 @@ class ProductOffer extends DataObject implements ProductOfferInterface
         return $this->setData('parameters', $parameters);
     }
 
+    public function getProductParameters(): array
+    {
+        return $this->getData('product_parameters') ?? [];
+    }
+
+    public function setProductParameters(array $parameters): self
+    {
+        return $this->setData('product_parameters', $parameters);
+    }
+
     /**
      * @return array
      */

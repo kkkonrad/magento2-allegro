@@ -1,0 +1,47 @@
+name: Module quality
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['8.1', '8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: composer:v2
+          coverage: none
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+        env:
+          COMPOSER_AUTH: ${{ secrets.COMPOSER_AUTH }}
+      - name: PHP syntax
+        run: find . -type f -name '*.php' -not -path './vendor/*' -print0 | xargs -0 -n1 php -l
+      - name: Reject diagnostic calls
+        run: >-
+          ! grep -RInE --include='*.php'
+          '(^|[^A-Za-z0-9_])(dd|var_dump|print_r)[[:space:]]*\(|(^|[^A-Za-z0-9_])(die|exit)[[:space:]]*[;(]'
+          Api Block Console Controller Cron Logger Model Observer Plugin Service Setup Ui ViewModel
+      - name: Unit tests
+        run: vendor/bin/phpunit -c phpunit.xml.dist
+
+  integration:
+    runs-on: [self-hosted, magento-integration]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: app/code/Macopedia/Allegro
+      - name: Magento integration tests
+        run: >-
+          vendor/bin/phpunit -c dev/tests/integration/phpunit.xml.dist
+          "$GITHUB_WORKSPACE/app/code/Macopedia/Allegro/Test/Integration"

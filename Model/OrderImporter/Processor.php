@@ -23,6 +23,7 @@ use Macopedia\Allegro\Model\Configuration;
 use Macopedia\Allegro\Model\OrderRepository;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Lock\LockManagerInterface;
+use Macopedia\Allegro\Model\OrderImportState;
 
 class Processor
 {
@@ -56,6 +57,9 @@ class Processor
     /** @var LockManagerInterface */
     private $lockManager;
 
+    /** @var OrderImportState */
+    private $importState;
+
     /**
      * Processor constructor.
      * @param Creator $creator
@@ -68,6 +72,7 @@ class Processor
      * @param AllegroReservation $allegroReservation
      * @param ResourceConnection $resource
      * @param LockManagerInterface $lockManager
+     * @param OrderImportState $importState
      */
     public function __construct(
         Creator $creator,
@@ -79,7 +84,8 @@ class Processor
         Configuration $configuration,
         AllegroReservation $allegroReservation,
         ResourceConnection $resource,
-        LockManagerInterface $lockManager
+        LockManagerInterface $lockManager,
+        OrderImportState $importState
     ) {
         $this->creator = $creator;
         $this->logger = $logger;
@@ -91,6 +97,7 @@ class Processor
         $this->allegroReservation = $allegroReservation;
         $this->resource = $resource;
         $this->lockManager = $lockManager;
+        $this->importState = $importState;
     }
 
     /**
@@ -109,24 +116,53 @@ class Processor
         }
 
         try {
+            $this->importState->markProcessing($checkoutFormId);
             $connection->beginTransaction();
+            $orderId = null;
+            $processed = false;
 
             if ($checkoutForm->getStatus() === Status::ALLEGRO_READY_FOR_PROCESSING) {
-                if (!$this->tryToGetOrder($checkoutFormId)) {
+                $existingOrder = $this->tryToGetOrder($checkoutFormId);
+                if (!$existingOrder) {
                     $this->allegroReservation->compensateReservation($checkoutFormId);
-                    $this->tryCreateOrder($checkoutForm);
+                    $orderId = $this->tryCreateOrder($checkoutForm);
+                } else {
+                    $orderId = (int)$existingOrder->getEntityId();
                 }
+                $processed = true;
             } elseif ($checkoutForm->getStatus() === Status::ALLEGRO_CANCELLED) {
                 $this->allegroReservation->compensateReservation($checkoutFormId);
+                $processed = true;
             } else {
                 $this->allegroReservation->placeReservation($checkoutForm);
+                $this->importState->markNew($checkoutFormId);
             }
 
             $this->removeErrorLogIfExist($checkoutForm);
+            if ($processed) {
+                $this->importState->markImported($checkoutFormId, $orderId);
+            }
             $connection->commit();
-        } catch (\Exception $e) {
-            $connection->rollBack();
-            $this->addOrderWithErrorToTable($checkoutFormId, $e);
+        } catch (\Throwable $e) {
+            if ($connection->getTransactionLevel() > 0) {
+                $connection->rollBack();
+            }
+            try {
+                $this->addOrderWithErrorToTable($checkoutFormId, $e);
+            } catch (\Throwable $logException) {
+                $this->logger->apiFailure('Could not persist Allegro order import error', [
+                    'checkout_form_id' => $checkoutFormId,
+                    'exception_type' => get_class($logException),
+                ]);
+            }
+            try {
+                $this->importState->markFailure($checkoutFormId, $e);
+            } catch (\Throwable $stateException) {
+                $this->logger->apiFailure('Could not persist Allegro order import state', [
+                    'checkout_form_id' => $checkoutFormId,
+                    'exception_type' => get_class($stateException),
+                ]);
+            }
             throw $e;
         } finally {
             $this->lockManager->unlock($lockName);
@@ -148,10 +184,10 @@ class Processor
 
     /**
      * @param string $checkoutFormId
-     * @param \Exception $e
+     * @param \Throwable $e
      * @throws OrderProcessingException
      */
-    public function addOrderWithErrorToTable(string $checkoutFormId, \Exception $e): void
+    public function addOrderWithErrorToTable(string $checkoutFormId, \Throwable $e): void
     {
         $date = $this->date->gmtDate();
 
@@ -167,10 +203,10 @@ class Processor
         $orderLog->setCheckoutFormId($checkoutFormId);
         $orderLog->setDateOfLastTry($date);
 
-        $reason = [$e->getMessage()];
+        $reason = [$this->safeErrorMessage($e->getMessage())];
         while ($e->getPrevious()) {
             $e = $e->getPrevious();
-            $reason[] = $e->getMessage();
+            $reason[] = $this->safeErrorMessage($e->getMessage());
         }
 
         $orderLog->setReason(implode("\n", $reason));
@@ -190,12 +226,13 @@ class Processor
      * @param CheckoutFormInterface $checkoutForm
      * @throws \Exception
      */
-    private function tryCreateOrder(CheckoutFormInterface $checkoutForm): void
+    private function tryCreateOrder(CheckoutFormInterface $checkoutForm): ?int
     {
         $checkoutFormId = $checkoutForm->getId();
         try {
-            $this->creator->execute($checkoutForm);
+            $orderId = $this->creator->execute($checkoutForm);
             $this->logger->info("Order with id [$checkoutFormId] has been successfully created");
+            return $orderId ? (int)$orderId : null;
         } catch (\Exception $e) {
             throw new OrderProcessingException(
                 "Error while creating order with id [{$checkoutFormId}]",
@@ -236,5 +273,12 @@ class Processor
         }
 
         return true;
+    }
+
+    private function safeErrorMessage(string $message): string
+    {
+        $message = preg_replace('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', '[email]', $message);
+        $message = preg_replace('/\b(?:Bearer\s+)?[A-Za-z0-9+\/_=-]{32,}\b/i', '[secret]', (string)$message);
+        return mb_substr(trim((string)$message), 0, 1000);
     }
 }

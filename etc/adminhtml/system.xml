@@ -45,6 +45,16 @@
                     <label>Token refresh cron enabled</label>
                     <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
                 </field>
+                <field id="connect_timeout" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>API connection timeout (seconds)</label>
+                    <comment>Allowed range: 1-60 seconds.</comment>
+                    <validate>required-entry validate-digits validate-greater-than-zero</validate>
+                </field>
+                <field id="request_timeout" translate="label comment" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>API request timeout (seconds)</label>
+                    <comment>Allowed range: 1-300 seconds.</comment>
+                    <validate>required-entry validate-digits validate-greater-than-zero</validate>
+                </field>
             </group>
             <group id="credentials" showInDefault="1" showInStore="1" showInWebsite="1" sortOrder="20" translate="label">
                 <label>Credentials</label>
@@ -149,11 +159,16 @@
                     <label>Product attribute for getting EAN</label>
                     <source_model>Macopedia\Allegro\Model\Config\Source\ProductAttributes</source_model>
                 </field>
-                <field id="description_attribute" translate="label" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="brand_attribute" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Product attribute for getting brand</label>
+                    <comment>The option label must match a brand available in the selected Allegro category.</comment>
+                    <source_model>Macopedia\Allegro\Model\Config\Source\ProductAttributes</source_model>
+                </field>
+                <field id="description_attribute" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Product attribute for getting description</label>
                     <source_model>Macopedia\Allegro\Model\Config\Source\ProductAttributes</source_model>
                 </field>
-                <field id="price_attribute" translate="label" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="price_attribute" translate="label" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Product attribute for getting price</label>
                     <source_model>Macopedia\Allegro\Model\Config\Source\ProductAttributes</source_model>
                 </field>

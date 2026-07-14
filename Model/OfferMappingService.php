@@ -8,10 +8,12 @@ use Macopedia\Allegro\Api\ProductRepositoryInterface;
 use Macopedia\Allegro\Logger\Logger;
 use Macopedia\Allegro\Model\Api\Credentials;
 use Magento\Framework\App\ResourceConnection;
+use Macopedia\Allegro\Model\ResourceModel\ProductOffer as ProductOfferResource;
 
 class OfferMappingService
 {
     private const TABLE = 'allegro_offer_mapping_reconciliation';
+    private const MAPPING_TABLE = 'allegro_offer_mapping';
     private const MAX_ATTEMPTS = 5;
 
     /** @var ProductRepositoryInterface */
@@ -26,23 +28,40 @@ class OfferMappingService
     /** @var Logger */
     private $logger;
 
+    /** @var ProductOfferResource */
+    private $productOfferResource;
+
     public function __construct(
         ProductRepositoryInterface $productRepository,
         ResourceConnection $resourceConnection,
         Credentials $credentials,
-        Logger $logger
+        Logger $logger,
+        ProductOfferResource $productOfferResource
     ) {
         $this->productRepository = $productRepository;
         $this->resourceConnection = $resourceConnection;
         $this->credentials = $credentials;
         $this->logger = $logger;
+        $this->productOfferResource = $productOfferResource;
     }
 
     public function saveMapping(
         int $productId,
         string $offerId,
-        ?string $allegroProductId = null
+        ?string $allegroProductId = null,
+        ?string $sellerId = null
     ): bool {
+        if ($sellerId === null || $sellerId === '') {
+            try {
+                $sellerId = $this->productOfferResource->getCurrentUserId();
+            } catch (\Throwable $exception) {
+                $this->logger->apiFailure('Could not resolve Allegro seller ID for offer mapping', [
+                    'offer_id' => $offerId,
+                    'exception_type' => get_class($exception),
+                ]);
+            }
+        }
+
         $connection = $this->resourceConnection->getConnection();
         $connection->beginTransaction();
 
@@ -53,12 +72,19 @@ class OfferMappingService
                 $product->setData('allegro_product_id', $allegroProductId);
             }
             $this->productRepository->save($product);
+            $connection->insertOnDuplicate($this->mappingTableName(), [
+                'product_id' => $productId,
+                'offer_id' => $offerId,
+                'allegro_product_id' => $allegroProductId,
+                'seller_id' => $sellerId,
+                'environment' => $this->environment(),
+            ], ['offer_id', 'allegro_product_id', 'seller_id', 'synced_at']);
             $this->markResolved($offerId);
             $connection->commit();
             return true;
         } catch (\Exception $e) {
             $connection->rollBack();
-            $this->recordFailure($productId, $offerId, $allegroProductId, $e);
+            $this->recordFailure($productId, $offerId, $allegroProductId, $sellerId, $e);
             $this->logger->apiFailure('Could not persist Allegro offer mapping', [
                 'product_id' => $productId,
                 'offer_id' => $offerId,
@@ -91,7 +117,8 @@ class OfferMappingService
             if ($this->saveMapping(
                 (int)$row['product_id'],
                 (string)$row['offer_id'],
-                $row['allegro_product_id'] !== null ? (string)$row['allegro_product_id'] : null
+                $row['allegro_product_id'] !== null ? (string)$row['allegro_product_id'] : null,
+                $row['seller_id'] !== null ? (string)$row['seller_id'] : null
             )) {
                 $result['resolved']++;
             } else {
@@ -106,6 +133,7 @@ class OfferMappingService
         int $productId,
         string $offerId,
         ?string $allegroProductId,
+        ?string $sellerId,
         \Exception $exception
     ): void {
         $connection = $this->resourceConnection->getConnection();
@@ -122,10 +150,10 @@ class OfferMappingService
         $data = [
             'product_id' => $productId,
             'allegro_product_id' => $allegroProductId,
-            'seller_id' => $this->credentials->getClientId(),
+            'seller_id' => $sellerId,
             'status' => 'failed',
             'attempts' => min(((int)($existing['attempts'] ?? 0)) + 1, self::MAX_ATTEMPTS),
-            'last_error' => mb_substr($exception->getMessage(), 0, 1000),
+            'last_error' => $this->safeError($exception),
         ];
 
         if ($existing) {
@@ -159,5 +187,17 @@ class OfferMappingService
     private function tableName(): string
     {
         return $this->resourceConnection->getTableName(self::TABLE);
+    }
+
+    private function mappingTableName(): string
+    {
+        return $this->resourceConnection->getTableName(self::MAPPING_TABLE);
+    }
+
+    private function safeError(\Throwable $exception): string
+    {
+        $message = preg_replace('/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i', '[email]', $exception->getMessage());
+        $message = preg_replace('/\b(?:Bearer\s+)?[A-Za-z0-9+\/_=-]{32,}\b/i', '[secret]', (string)$message);
+        return mb_substr(get_class($exception) . ': ' . trim((string)$message), 0, 1000);
     }
 }

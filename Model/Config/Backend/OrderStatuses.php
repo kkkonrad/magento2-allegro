@@ -10,6 +10,7 @@ use Magento\Framework\Model\Context;
 use Magento\Framework\Model\ResourceModel\AbstractResource;
 use Magento\Framework\Registry;
 use Magento\Framework\Serialize\SerializerInterface;
+use Magento\Framework\Exception\LocalizedException;
 
 class OrderStatuses extends ConfigValue
 {
@@ -45,8 +46,17 @@ class OrderStatuses extends ConfigValue
      */
     public function beforeSave()
     {
-        /** @var array $value */
         $value = $this->getValue();
+        if (is_string($value)) {
+            try {
+                $value = $this->serializer->unserialize($value);
+            } catch (\InvalidArgumentException $exception) {
+                throw new LocalizedException(__('Order status mapping must be valid JSON.'), $exception);
+            }
+        }
+        if (!is_array($value)) {
+            throw new LocalizedException(__('Order status mapping must be an array.'));
+        }
         unset($value['__empty']);
         array_walk_recursive($value, function (&$v) {
             $v = trim($v);

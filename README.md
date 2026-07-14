@@ -116,6 +116,8 @@ Moduł obsługuje standardową logikę dla składania zamówień w Magento. Dost
 
 Jeżeli z jakiegoś powodu nie uda się zaimportować zamówienia, to informacja o niepowodzeniu trafia do tabeli `allegro_orders_with_errors`. Można ją podejrzeć wchodząc Sprzedaż->Allegro zamówienia z błędami.
 
+Każdy checkout form ma również trwały stan importu (`new`, `processing`, `imported`, `retryable` lub `failed`). Checkout form ID jest kluczem idempotencji, dlatego ponowienie eventu, crona lub komendy nie tworzy drugiego zamówienia Magento.
+
 Znajdują się tam informacje na temat powodu błędu, ilości prób zaimportowania, daty pierwszej oraz ostatniej próby zaimportowania oraz ID zamówienia. Aby spróbować zaimportować ponownie zamówienia należy wybrać interesujące nas rekordy a następnie rozwinąć listę akcji i wybrać `Importuj`
 
 ![grid](README/allegroOrdersWithErrorsGrid.png)
@@ -157,6 +159,10 @@ Za pomocą wtyczki możemy wystawiać produkty z Magento na Allegro. Aby to zrob
     ![origin_configuration](README/originConfiguration.png)
 4. (opcjonalnie) Wybrać atrybuty produktów, z których mają być pobierane kod EAN, opis oraz cena (Sklepy->Konfiguracja->Allegro->Konfiguracja->Tworzenie oferty)
     ![ean_select](README/allegroOfferCreateConfiguration.png)
+5. Wybrać atrybut marki produktu. Domyślnie moduł używa standardowego atrybutu Magento `manufacturer`. Wartość jest wysyłana jako parametr produktu katalogowego, jeżeli definicja kategorii Allegro wymaga marki.
+6. Dla ofert objętych GPSR utworzyć w Allegro wpis „Producent odpowiedzialny” lub „Osoba odpowiedzialna”, a następnie wybrać go z listy w formularzu oferty. Moduł zapisuje identyfikator wpisu Allegro; nie kopiuje danych adresowych do konfiguracji Magento.
+
+Kod GTIN/EAN musi być prawidłowy pod względem cyfry kontrolnej i istnieć w Katalogu Produktów Allegro/GS1. Domyślnym atrybutem tworzonym przez moduł jest `ean`; można wskazać inny atrybut w konfiguracji. Cennik dostaw, warunki zwrotów i reklamacji oraz dane GPSR są danymi konta sprzedawcy i muszą zostać utworzone w Allegro przed publikacją.
 
 Po wprowadzeniu wymaganych danych można zacząć wystawiać oferty z poziomu Magento.
 Należy wybrać produkt, który chcemy wstawić, wejść na jego stronę i wybrać zdjęcie do oferty Allegro. Żeby, to zrobić wystarczy kliknąć zdjęcie, zaznaczyć rolę 'Allegro', a następnie zapisać produkt.
@@ -204,16 +210,23 @@ Import zamówień z błędami:
 ``macopedia:allegro:orders-with-errors-import``
 
 Usunięcie mapowań produktów z nieistniejącymi ofertami:
-``macopedia:allegro:clean-offers-mapping``
+``macopedia:allegro:clean-offers-mapping --dry-run --limit 1000``
+
+Bez `--dry-run` komenda usuwa mapowanie wyłącznie wtedy, gdy Allegro jednoznacznie zwróci 404. Timeout i inne błędy przejściowe nie powodują usunięcia mapowania.
 
 Wyszukanie produktu katalogowego po EAN:
-``macopedia:allegro:product:search --ean [EAN]``
+``macopedia:allegro:product:search [EAN]``
 
 Ponowienie lokalnego zapisu mapowań ofert utworzonych w Allegro:
 ``macopedia:allegro:reconcile-offer-mappings --limit 100``
 
 Lista operacji asynchronicznych, które wyczerpały pięć prób:
 ``macopedia:allegro:async-failures --limit 100``
+
+Stan OAuth, cronów, kolejki oraz operacji po wyczerpaniu prób:
+``macopedia:allegro:health``
+
+Komenda health nie wyświetla tokenów ani sekretów. Zwraca niezerowy kod wyjścia przy braku połączenia OAuth, ostatnim nieudanym zadaniu lub obecności martwych operacji asynchronicznych.
 
 ## Konfiguracja MQ
 
@@ -263,3 +276,27 @@ Przykładowa konfiguracja brokera (wartości należy dostarczyć jako sekrety ś
 ```
 
 Do ręcznego uruchomienia pojedynczego konsumenta służy `bin/magento queue:consumers:start <nazwa> --max-messages=100`.
+
+## Timeouty i obsługa błędów API
+
+W sekcji ogólnej konfiguracji można ustawić timeout połączenia (domyślnie 10 s, maksymalnie 60 s) i całego żądania (domyślnie 120 s, maksymalnie 300 s). Moduł rozróżnia błędy autoryzacji, walidacji, braku zasobu, limitu żądań, transportu i pozostałe błędy odpowiedzi API. Retry obejmuje jedynie bezpieczne metody oraz problemy przejściowe: połączenie, HTTP 429 i 5xx.
+
+## Testy i bramka jakości
+
+Testy jednostkowe w instalacji Magento:
+
+```bash
+vendor/bin/phpunit -c dev/tests/unit/phpunit.xml.dist app/code/Macopedia/Allegro/Test/Unit
+```
+
+Testy integracyjne wymagają osobnej, przeznaczonej wyłącznie do testów bazy Magento:
+
+```bash
+vendor/bin/phpunit -c dev/tests/integration/phpunit.xml.dist "$(pwd)/app/code/Macopedia/Allegro/Test/Integration"
+```
+
+Przed wdrożeniem należy dodatkowo wykonać `php -l`, `git diff --check`, `bin/magento setup:db:status` i `bin/magento setup:di:compile`. Testy Sandbox nie zastępują testów automatycznych i nie mogą zapisywać tokenów ani sekretów w artefaktach CI.
+
+## Wdrożenie i rollback
+
+Automatyczny import, synchronizację i crony należy uruchamiać etapami po weryfikacji OAuth oraz odczytów API. Przed wdrożeniem produkcyjnym trzeba wykonać backup bazy i eksport konfiguracji bez sekretów. W razie rollbacku najpierw należy wyłączyć automatyzacje, następnie cofnąć kod do wersji zgodnej ze schematem; nie usuwać tabel ani danych utworzonych przez moduł.

@@ -1,59 +1,55 @@
 # Raport weryfikacji implementacji — Macopedia_Allegro
 
-## Zweryfikowane technicznie
+Data ostatniej aktualizacji: 2026-07-14. Środowisko: Magento 2.4.8-p5, PHP 8.2, Allegro Sandbox.
 
-- Magento 2.4.8-p5: `setup:upgrade`, `setup:db:status` i `setup:di:compile` zakończone sukcesem.
-- PHP 8.2: lint całego modułu oraz `git diff --check` bez błędów.
-- PHPUnit: 48 testów jednostkowych, 127 asercji, wynik PASS.
-- Zarejestrowane konsumery dla MySQL MQ i RabbitMQ: stan/cena, status zamówienia, przesyłka.
-- Rejestr retry ma backoff, limit pięciu prób, status `dead`, komunikat systemowy i komendę diagnostyczną.
-- Brak martwych operacji asynchronicznych w aktualnym środowisku: `macopedia:allegro:async-failures --limit=10`.
-- Odczyt katalogowy Sandbox wykonano komendą `macopedia:allegro:product:search 5901234123457`; znaleziono produkt katalogowy `822e8799-71a4-4aae-a2e5-b4cfc1d367ae`.
+## Wynik
 
-## Wyniki E2E Sandbox — 2026-07-13
+Pełny scenariusz E2E AC-01–AC-08 zakończył się wynikiem PASS. Oferta przeszła cykl: katalog → szkic → publikacja → synchronizacja ceny i ilości → zakup → import zamówienia → ponowienie bez duplikatu → status → przesyłka → zakończenie.
+
+## Bramka techniczna
+
+- `setup:upgrade --keep-generated` i `setup:db:status`: PASS.
+- `setup:di:compile`: PASS.
+- PHPUnit: 66 testów jednostkowych, 187 asercji: PASS.
+- lint PHP całego modułu i `git diff --check`: PASS.
+- kontrola `dd`, `die`, `exit`, `var_dump` i `print_r` w kodzie produkcyjnym: PASS.
+- logi po finalnym buildzie: brak nowych błędów krytycznych i brak markerów sekretów. `exception.log` zachowuje wpisy z godz. 11:28 UTC po celowo nieudanych próbach uruchomienia instalatora testowego; przyczyny zostały usunięte, a późniejszy test integracyjny przeszedł.
+- CI obejmuje PHP 8.1/8.2/8.3 oraz osobny job integracyjny na runnerze Magento.
+- test integracyjny na czystej, izolowanej bazie: 1 test, 10 asercji — PASS. Sprawdza rozwiązywanie usług, timeouty, tabele operacyjne i unikalność rezerwacji.
+
+Klient API ma konfigurowalne timeouty, ograniczony retry z backoff/jitter i domenowe wyjątki dla autoryzacji, walidacji, 404, rate limitu, transportu oraz pozostałych błędów odpowiedzi. OAuth używa ochrony `state`, oddzielnych tokenów środowiskowych i blokady odświeżania. Sesja administratora dla `state` jest ładowana leniwie, dzięki czemu komendy CLI i instalator Magento nie inicjalizują jej bez potrzeby.
+
+## Wyniki E2E Sandbox
 
 | AC | Wynik | Dowód / uwagi |
 | --- | --- | --- |
-| AC-01 | PASS części technicznej | Nowy OAuth działa; uwierzytelnione wywołania katalogu, dostaw i ofert zakończyły się sukcesem. |
-| AC-02 | PASS | GTIN `5901234123457` zwrócił ID produktu i kategorię `64509`. |
-| AC-03 | PASS dla draftu i mapowania | Utworzono nieaktywny draft `7781864283`; na produkcie Magento `2041` zapisano offer ID i catalog product ID. |
-| AC-04 | PASS części obsługi błędów | Sandbox zwrócił strukturalne błędy walidacji bez ujawnienia tokenu ani Client Secret. Pełny test komunikatu w panelu pozostaje do wykonania. |
+| AC-01 | PASS | Konto sprzedawcy połączone przez OAuth; odczyty i zapisy API oraz refresh tokena działają. Tokeny Sandbox i Production są rozdzielone. |
+| AC-02 | PASS | GTIN `9506000140445` powiązano z produktem katalogowym `00913892-b563-42e6-b343-95ba2935ba2a`, kategoria `260969`. |
+| AC-03 | PASS | Oferta `7781864283` została powiązana z produktem Magento `2041`, zwalidowana, opublikowana i finalnie zakończona. Dedykowane mapowanie zawiera środowisko Sandbox, konto sprzedawcy i produkt katalogowy. |
+| AC-04 | PASS | Kontrolowany błędny POST zwrócił HTTP 422 jako `ValidationException`, request ID `4d70cdbe78ac1fb8`, kod `ConstraintViolationException.NotBlank`, ścieżka `name`. |
+| AC-05 | PASS | Zmiana ceny i ilości została przetworzona przez MySQL MQ. Allegro potwierdziło cenę `12.34` i ilość `3`; konsument odczytał aktualne dane i zdeduplikował starsze komunikaty. |
+| AC-06 | PASS | Zakup utworzył checkout form `c6d5ac00-7f71-11f1-a02b-87d6edb9dac3`. Po korekcie rozpoznawania regionu importer utworzył zamówienie Magento `000000004`, wartość `22.83`, dostawa `10.49`, jedna pozycja. |
+| AC-07 | PASS | Pierwsza próba kontrolowanie zapisała błąd braku `regionId`; retry zakończył import. Wielokrotne ponowienie tego samego checkout form nadal pozostawiło dokładnie jedno zamówienie Magento. |
+| AC-08 | PASS | Statusy `processing → PROCESSING` i `complete → SENT` przeszły przez MQ. Przesyłka Magento `000000005`, tracking `E2E-20260714-0004`, przewoźnik `OTHER`, została potwierdzona przez endpoint przesyłek checkout form. |
 
-Aktualizacja draftu przez `PATCH /sale/product-offers/7781864283` zakończyła się sukcesem: cena zmieniła się z `10` na `11`, a status pozostał `INACTIVE`.
+Końcowy odczyt oferty potwierdził status `ENDED`, cenę `12.34` i ilość `2` po zakupie.
 
-Ponowny odczyt draftu zwrócił 10 błędów `validation.errors`. Moduł mapuje preferowane komunikaty `userMessage` wraz ze ścieżką pola, pokazuje ostrzeżenie po zapisie i blokuje publikację przed wysłaniem komendy aktywacji. Test blokady dla `7781864283` zakończył się wynikiem `blocked=true`, `command_sent=false`. Akcja publikacji korzysta teraz z Product Offer API i zachowuje fallback dla ofert utworzonych przez starszy endpoint.
+## Zrealizowane elementy planu
 
-Po wdrożeniu obsługi `taxSettings` i `productSet[].safetyInformation` draft zaktualizowano bez publikacji. Allegro zaakceptowało VAT `23.00`, fakturę `VAT`, ilość `0` dla One Fulfillment oraz tekst bezpieczeństwa. Liczba błędów walidacji spadła z 10 do 7. Pozostały błędy zależne od danych i konfiguracji konta: GTIN/GS1, brak marki w produkcie katalogowym, brak warunków zwrotów i reklamacji, brak responsible producer oraz nieaktywna konfiguracja One Fulfillment.
+- bezpieczny klient API, timeouty, retry, wyjątki domenowe i logowanie bez sekretów;
+- OAuth z CSRF `state`, blokadą refreshu i statusem połączenia;
+- GTIN/EAN, konfigurowalna marka (`manufacturer` domyślnie), GPSR i dane wymagane przez Product Offer API;
+- jeden serwis zapisu oferty, walidator, builder payloadu i wyłączenie starej ścieżki `/sale/offers`;
+- dedykowane mapowanie produkt–oferta–konto–środowisko, reconciliation i walidacja ręcznego mapowania;
+- bezpieczne czyszczenie mapowań z `--dry-run` i usuwaniem wyłącznie po potwierdzonym 404;
+- idempotentne MQ dla ceny, ilości, statusu i przesyłki oraz rejestr operacji po wyczerpaniu prób;
+- trwały stan importu checkout form, blokada, retry, bezpieczne błędy i ochrona przed duplikatem zamówienia;
+- rozpoznawanie regionu adresu na podstawie danych kraju i polskiego kodu pocztowego;
+- blokady cronów, metryki ostatniego uruchomienia i komenda `macopedia:allegro:health`;
+- testy jednostkowe, test infrastruktury Magento, CI, dokumentacja operacyjna i zasady rollbacku.
 
-Formularz i backend obsługują obecnie responsible producer, responsible person, tekst bezpieczeństwa i VAT. Backend sprawdza istnienie wpisów GPSR w słownikach konta, dostępność cennika, zgodność VAT z kategorią, zasady One Fulfillment oraz usuwa parametry `describesProduct=true`. Na koncie testowym listy responsible producers, responsible persons i after-sales services nadal są puste, dlatego moduł nie może samodzielnie uzupełnić tych danych biznesowych.
+## Uwagi przed wdrożeniem produkcyjnym
 
-Test wykrył i pozwolił poprawić dwa błędy payloadu:
-
-1. `images` endpointu product-offer musi być tablicą URL-i, a nie tablicą obiektów `{url: ...}`.
-2. Parametry z `options.describesProduct=true` należą do produktu katalogowego i nie mogą być wysyłane w głównej sekcji `parameters` oferty. Formularz filtruje je teraz na podstawie definicji API.
-
-Draft pozostaje niepublikowalny z przyczyn danych/konta Sandbox, a nie błędu transportu modułu. API zgłasza między innymi testowy GTIN spoza GS1, brak wymaganych warunków zwrotów/reklamacji, brak responsible producer oraz ograniczenia wybranego cennika One Fulfillment. Sandbox zwraca wyłącznie cenniki One Fulfillment, a konto nie ma aktywnej usługi i wymaganej konfiguracji magazynowej. Allegro ustawiło z tego powodu `stock.available=null` mimo przesłanej ilości `5`.
-
-## Pozostałe scenariusze E2E do wykonania w Sandbox
-
-Wymagają one przygotowanego produktu Magento, aktywnego cennika dostaw Allegro oraz osobnego konta kupującego Sandbox. Nie należy wykonywać ich na danych produkcyjnych.
-
-| AC | Scenariusz | Dowód PASS |
-| --- | --- | --- |
-| AC-01 | OAuth i refresh | aktywny status połączenia po ponownym logowaniu Sandbox |
-| AC-02 | Wyszukanie EAN | ID katalogowe, kategoria i parametry w formularzu |
-| AC-03 | Product offer | ID oferty i katalogu zapisane na produkcie Magento |
-| AC-04 | Błąd 422 | bezpieczny komunikat operatora, request ID w logu, bez sekretów |
-| AC-05 | Zmiana ilości | komunikat MQ i pojedyncza aktualizacja oferty |
-| AC-06 | Zamówienie | jedno zamówienie Magento po zakupie Sandbox |
-| AC-07 | Ponowienie | rekord błędu, naprawa i import bez duplikatu |
-| AC-08 | Przesyłka | numer trackingowy widoczny przy checkout form Sandbox |
-
-## Bezpieczny porządek wykonania E2E
-
-1. Ustawić Sandbox i połączyć konto w `Sklepy → Konfiguracja → Allegro`.
-2. Utworzyć lub wskazać prosty produkt Magento z poprawnym EAN oraz przygotować cennik dostaw, lokalizację i płatności.
-3. Utworzyć nieaktywną ofertę, zweryfikować mapowanie, a następnie opublikować ją.
-4. Uruchomić po jednym konsumencie właściwym dla konfiguracji MQ, np. `bin/magento queue:consumers:start AllegroApiQueueDb --max-messages=100`.
-5. Wykonać zmianę ilości, zakup testowy, zmianę statusu i utworzenie przesyłki.
-6. Zachować jedynie zanonimizowane dowody: ID encji, request ID i czas testu. Nie zapisywać tokenów ani sekretów.
+1. W produkcji skonfigurować osobne dane aplikacji Allegro i ponownie wykonać OAuth; nie kopiować tokenów Sandbox.
+2. Włączać import, synchronizacje i crony etapami, obserwując `macopedia:allegro:health` oraz logi przez pełny cykl operacyjny.
+3. Zachować nowe tabele podczas rollbacku; najpierw wyłączyć automatyzacje, potem cofnąć kod do wersji zgodnej ze schematem.

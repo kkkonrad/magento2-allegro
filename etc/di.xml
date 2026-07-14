@@ -89,6 +89,7 @@
                 <item name="allegro_product_search" xsi:type="object">Macopedia\Allegro\Console\Command\SearchProductByEanCommand</item>
                 <item name="ReconcileOfferMappings" xsi:type="object">Macopedia\Allegro\Console\Command\ReconcileOfferMappings</item>
                 <item name="ListAsyncFailures" xsi:type="object">Macopedia\Allegro\Console\Command\ListAsyncFailures</item>
+                <item name="AllegroHealthStatus" xsi:type="object">Macopedia\Allegro\Console\Command\HealthStatus</item>
             </argument>
         </arguments>
     </type>
@@ -158,6 +159,12 @@
             <argument name="resource" xsi:type="object">Macopedia\Allegro\Model\ResourceModel\ProductOffer</argument>
             <argument name="productOfferFactory" xsi:type="object">Macopedia\Allegro\Model\Api\ProductOfferFactory</argument>
             <argument name="logger" xsi:type="object">Macopedia\Allegro\Logger\Logger</argument>
+        </arguments>
+    </type>
+
+    <type name="Macopedia\Allegro\Model\Api\Auth">
+        <arguments>
+            <argument name="stateManager" xsi:type="object">Macopedia\Allegro\Model\Api\OAuthStateManager\Proxy</argument>
         </arguments>
     </type>
 

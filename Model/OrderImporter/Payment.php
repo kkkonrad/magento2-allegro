@@ -113,7 +113,7 @@ class Payment
                 return true;
             }
         }
-        $this->logger->addError('Wrong payment method ' . $code);
+        $this->logger->error('Wrong Allegro payment method', ['method_code' => (string)$code]);
 
         return false;
     }

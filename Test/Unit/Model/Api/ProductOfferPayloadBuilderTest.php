@@ -29,6 +29,9 @@ class ProductOfferPayloadBuilderTest extends TestCase
             ['id' => 'range', 'rangeValue' => ['from' => '1', 'to' => '10']],
             ['id' => 'empty', 'values' => ['', null]],
         ]);
+        $offer->setProductParameters([
+            ['id' => '248811', 'valuesIds' => ['248811_123']],
+        ]);
         $offer->setImages([
             ['url' => 'https://example.test/one.jpg', 'ignored' => 'value'],
             'https://example.test/two.jpg',
@@ -55,6 +58,9 @@ class ProductOfferPayloadBuilderTest extends TestCase
 
         self::assertSame('pl-PL', $payload['language']);
         self::assertSame('catalog-product-id', $payload['productSet'][0]['product']['id']);
+        self::assertSame([
+            ['id' => '248811', 'valuesIds' => ['248811_123']],
+        ], $payload['productSet'][0]['product']['parameters']);
         self::assertSame('producer-id', $payload['productSet'][0]['responsibleProducer']['id']);
         self::assertSame('person-id', $payload['productSet'][0]['responsiblePerson']['id']);
         self::assertSame('TEXT', $payload['productSet'][0]['safetyInformation']['type']);

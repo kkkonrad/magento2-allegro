@@ -74,6 +74,9 @@ class Creator
     /** @var Factory */
     private $objectFactory;
 
+    /** @var AddressRegionResolver */
+    private $addressRegionResolver;
+
     /**
      * Creator constructor.
      * @param Shipping $shipping
@@ -90,6 +93,7 @@ class Creator
      * @param QuoteManagement $quoteManagement
      * @param Registry $registry
      * @param Factory $objectFactory
+     * @param AddressRegionResolver $addressRegionResolver
      */
     public function __construct(
         Shipping $shipping,
@@ -105,7 +109,8 @@ class Creator
         ScopeConfigInterface $scopeConfig,
         QuoteManagement $quoteManagement,
         Registry $registry,
-        Factory $objectFactory
+        Factory $objectFactory,
+        AddressRegionResolver $addressRegionResolver
     ) {
         $this->shipping = $shipping;
         $this->payment = $payment;
@@ -121,6 +126,7 @@ class Creator
         $this->quoteManagement = $quoteManagement;
         $this->registry = $registry;
         $this->objectFactory = $objectFactory;
+        $this->addressRegionResolver = $addressRegionResolver;
     }
 
     /**
@@ -258,6 +264,7 @@ class Creator
     public function processShipping(Quote $quote, CheckoutFormInterface $checkoutForm)
     {
         $checkoutForm->getDelivery()->getAddress()->fillAddress($quote->getShippingAddress());
+        $this->addressRegionResolver->complete($quote->getShippingAddress());
         $quote->getShippingAddress()->setCustomerId($quote->getCustomer()->getId());
 
         $shippingMethodCode = $this->shipping->getShippingMethodCode($checkoutForm);
@@ -281,6 +288,7 @@ class Creator
             $quote->getBillingAddress(),
             $checkoutForm->getDelivery()->getAddress()
         );
+        $this->addressRegionResolver->complete($quote->getBillingAddress());
         $quote->getBillingAddress()->setCustomerId($quote->getCustomer()->getId());
 
         $quote->getPayment()->setMethod(

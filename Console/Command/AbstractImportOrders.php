@@ -30,10 +30,10 @@ abstract class AbstractImportOrders extends Command
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @return int|void|null
+     * @return int
      * @throws LocalizedException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $this->state->getAreaCode();
@@ -43,11 +43,16 @@ abstract class AbstractImportOrders extends Command
 
         $output->writeln('Order import start');
 
-        $info = $this->createOrderImporter()->execute();
-       
+        try {
+            $info = $this->createOrderImporter()->execute();
+        } catch (\Throwable $exception) {
+            $output->writeln('<error>Order import failed. Check the Allegro logs.</error>');
+            return Command::FAILURE;
+        }
+
         $output->writeln($info->getMessage());
-        
-        return Command::SUCCESS;
+
+        return $info->hasErrors() ? Command::FAILURE : Command::SUCCESS;
     }
 
     /**

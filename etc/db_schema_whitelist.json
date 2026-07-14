@@ -72,7 +72,8 @@
         },
         "constraint": {
             "FK_0DF36C9A02B0CEA1AF96F370F2C37537": true,
-            "PRIMARY": true
+            "PRIMARY": true,
+            "ALLEGRO_RESERVATIONS_CHECKOUT_FORM_ID_SKU": true
         }
     },
     "allegro_offer_mapping_reconciliation": {
@@ -149,6 +150,43 @@
         "constraint": {
             "PRIMARY": true,
             "ALLEGRO_ASYNC_FAILURES_OPERATION_SOURCE_ID_ENVIRONMENT": true
+        }
+    },
+    "allegro_order_import_state": {
+        "column": {
+            "entity_id": true,
+            "checkout_form_id": true,
+            "status": true,
+            "attempts": true,
+            "magento_order_id": true,
+            "last_error": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "ALLEGRO_ORDER_IMPORT_STATE_STATUS_UPDATED_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ALLEGRO_ORDER_IMPORT_STATE_CHECKOUT_FORM_ID": true,
+            "ALLEGRO_ORDER_IMPORT_STATE_MAGENTO_ORDER_ID_SALES_ORDER_ENTT_ID": true
+        }
+    },
+    "allegro_offer_mapping": {
+        "column": {
+            "entity_id": true,
+            "product_id": true,
+            "offer_id": true,
+            "allegro_product_id": true,
+            "seller_id": true,
+            "environment": true,
+            "synced_at": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "ALLEGRO_OFFER_MAPPING_PRD_ID_CAT_PRD_ENTT_ENTT_ID": true,
+            "ALLEGRO_OFFER_MAPPING_PRODUCT_ID_ENVIRONMENT": true,
+            "ALLEGRO_OFFER_MAPPING_OFFER_ID_ENVIRONMENT": true
         }
     }
 }

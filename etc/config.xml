@@ -7,6 +7,8 @@
                 <authentication_url>https://allegro.pl/auth/oauth</authentication_url>
                 <sandbox_authentication_url>https://allegro.pl.allegrosandbox.pl/auth/oauth</sandbox_authentication_url>
                 <token_refresh_cron_enabled>1</token_refresh_cron_enabled>
+                <connect_timeout>10</connect_timeout>
+                <request_timeout>120</request_timeout>
             </general>
             <credentials>
                 <client_secret backend_model="Magento\Config\Model\Config\Backend\Encrypted"/>
@@ -31,7 +33,8 @@
                 <percent_increase>0</percent_increase>
             </price_policy>
             <offer_create>
-                <ean_attribute>sku</ean_attribute>
+                <ean_attribute>ean</ean_attribute>
+                <brand_attribute>manufacturer</brand_attribute>
                 <description_attribute>description</description_attribute>
                 <price_attribute>price</price_attribute>
             </offer_create>

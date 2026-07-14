@@ -8,6 +8,9 @@
     <event name="cataloginventory_stock_item_save_commit_after">
         <observer name="macopedia_allegro_qty_change" instance="Macopedia\Allegro\Observer\QtyChangeObserver"/>
     </event>
+    <event name="catalog_product_save_before">
+        <observer name="macopedia_allegro_validate_manual_offer_mapping" instance="Macopedia\Allegro\Observer\ValidateManualOfferMappingObserver"/>
+    </event>
     <event name="sales_order_shipment_save_after">
         <observer name="macopedia_allegro_shipping_save_after" instance="Macopedia\Allegro\Observer\SaveShippingAfterObserver" />
     </event>

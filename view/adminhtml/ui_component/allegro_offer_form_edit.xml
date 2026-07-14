@@ -189,27 +189,35 @@
             </argument>
         </field>
         <field name="responsible_producer_id">
-            <argument name="data" xsi:type="array"><item name="config" xsi:type="array">
-                <item name="dataType" xsi:type="string">text</item><item name="formElement" xsi:type="string">input</item>
-                <item name="label" xsi:type="string" translate="true">Responsible producer ID</item>
-                <item name="notice" xsi:type="string" translate="true">Use an ID from Allegro responsible producers.</item>
+            <argument name="data" xsi:type="array">
+                <item name="options" xsi:type="object">Macopedia\Allegro\Model\Config\Source\ResponsibleProducer</item>
+                <item name="config" xsi:type="array">
+                <item name="dataType" xsi:type="string">text</item><item name="formElement" xsi:type="string">select</item>
+                <item name="label" xsi:type="string" translate="true">Responsible producer</item>
+                <item name="notice" xsi:type="string" translate="true">Producers are loaded from the connected Allegro account.</item>
+                <item name="template" xsi:type="string">ui/form/field</item>
             </item></argument>
         </field>
         <field name="responsible_producer_name">
             <argument name="data" xsi:type="array"><item name="config" xsi:type="array">
+                <item name="visible" xsi:type="boolean">false</item>
                 <item name="dataType" xsi:type="string">text</item><item name="formElement" xsi:type="string">input</item>
                 <item name="label" xsi:type="string" translate="true">Responsible producer name</item>
             </item></argument>
         </field>
         <field name="responsible_person_id">
-            <argument name="data" xsi:type="array"><item name="config" xsi:type="array">
-                <item name="dataType" xsi:type="string">text</item><item name="formElement" xsi:type="string">input</item>
-                <item name="label" xsi:type="string" translate="true">Responsible person ID</item>
+            <argument name="data" xsi:type="array">
+                <item name="options" xsi:type="object">Macopedia\Allegro\Model\Config\Source\ResponsiblePerson</item>
+                <item name="config" xsi:type="array">
+                <item name="dataType" xsi:type="string">text</item><item name="formElement" xsi:type="string">select</item>
+                <item name="label" xsi:type="string" translate="true">Responsible person</item>
                 <item name="notice" xsi:type="string" translate="true">Required when the producer is established outside the European Union.</item>
+                <item name="template" xsi:type="string">ui/form/field</item>
             </item></argument>
         </field>
         <field name="responsible_person_name">
             <argument name="data" xsi:type="array"><item name="config" xsi:type="array">
+                <item name="visible" xsi:type="boolean">false</item>
                 <item name="dataType" xsi:type="string">text</item><item name="formElement" xsi:type="string">input</item>
                 <item name="label" xsi:type="string" translate="true">Responsible person name</item>
             </item></argument>

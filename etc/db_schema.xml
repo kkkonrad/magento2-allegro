@@ -70,6 +70,25 @@
         </constraint>
     </table>
 
+    <table name="allegro_order_import_state" resource="default" engine="innodb" comment="Idempotent Allegro checkout form import state">
+        <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="varchar" name="checkout_form_id" length="64" nullable="false" comment="Checkout Form ID"/>
+        <column xsi:type="varchar" name="status" length="16" nullable="false" default="new" comment="Import Status"/>
+        <column xsi:type="int" name="attempts" padding="10" unsigned="true" nullable="false" default="0" comment="Import Attempts"/>
+        <column xsi:type="int" name="magento_order_id" padding="10" unsigned="true" nullable="true" comment="Magento Order ID"/>
+        <column xsi:type="text" name="last_error" nullable="true" comment="Last Safe Error"/>
+        <column xsi:type="timestamp" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <column xsi:type="timestamp" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY"><column name="entity_id"/></constraint>
+        <constraint xsi:type="unique" referenceId="ALLEGRO_ORDER_IMPORT_STATE_CHECKOUT_FORM_ID">
+            <column name="checkout_form_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="ALLEGRO_ORDER_IMPORT_STATE_ORDER_ID_SALES_ORDER_ENTITY_ID" table="allegro_order_import_state" column="magento_order_id" referenceTable="sales_order" referenceColumn="entity_id" onDelete="SET NULL"/>
+        <index referenceId="ALLEGRO_ORDER_IMPORT_STATE_STATUS_UPDATED_AT" indexType="btree">
+            <column name="status"/><column name="updated_at"/>
+        </index>
+    </table>
+
     <table name="allegro_reservations" resource="default" engine="innodb" comment="Table with info about reservations for orders from Allegro that aren't paid yet">
         <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
         <column xsi:type="int" name="reservation_id" padding="10" unsigned="true" nullable="false" identity="false" comment="Reservation ID"/>
@@ -79,6 +98,10 @@
         <constraint xsi:type="foreign" referenceId="FOREIGN" table="allegro_reservations" column="reservation_id" referenceTable="inventory_reservation" referenceColumn="reservation_id" onDelete="CASCADE"/>
         <constraint xsi:type="primary" referenceId="PRIMARY">
             <column name="entity_id"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="ALLEGRO_RESERVATIONS_CHECKOUT_FORM_SKU">
+            <column name="checkout_form_id"/>
+            <column name="sku"/>
         </constraint>
     </table>
 
@@ -106,6 +129,24 @@
             <column name="status"/>
             <column name="attempts"/>
         </index>
+    </table>
+
+    <table name="allegro_offer_mapping" resource="default" engine="innodb" comment="Environment-aware Allegro offer mapping">
+        <column xsi:type="int" name="entity_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Entity ID"/>
+        <column xsi:type="int" name="product_id" padding="10" unsigned="true" nullable="false" comment="Magento Product ID"/>
+        <column xsi:type="varchar" name="offer_id" length="64" nullable="false" comment="Allegro Offer ID"/>
+        <column xsi:type="varchar" name="allegro_product_id" length="64" nullable="true" comment="Allegro Catalog Product ID"/>
+        <column xsi:type="varchar" name="seller_id" length="64" nullable="true" comment="Allegro Seller ID"/>
+        <column xsi:type="varchar" name="environment" length="16" nullable="false" comment="Allegro Environment"/>
+        <column xsi:type="timestamp" name="synced_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Last Mapping Synchronization"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY"><column name="entity_id"/></constraint>
+        <constraint xsi:type="foreign" referenceId="ALLEGRO_OFFER_MAPPING_PRODUCT_ID_CATALOG_PRODUCT_ENTITY_ENTITY_ID" table="allegro_offer_mapping" column="product_id" referenceTable="catalog_product_entity" referenceColumn="entity_id" onDelete="CASCADE"/>
+        <constraint xsi:type="unique" referenceId="ALLEGRO_OFFER_MAPPING_PRODUCT_ENVIRONMENT">
+            <column name="product_id"/><column name="environment"/>
+        </constraint>
+        <constraint xsi:type="unique" referenceId="ALLEGRO_OFFER_MAPPING_OFFER_ENVIRONMENT">
+            <column name="offer_id"/><column name="environment"/>
+        </constraint>
     </table>
 
     <table name="allegro_offer_sync_state" resource="default" engine="innodb" comment="Last successfully synchronized Allegro offer state">

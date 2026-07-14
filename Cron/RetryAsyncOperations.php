@@ -11,6 +11,7 @@ use Macopedia\Allegro\Model\Configuration;
 use Macopedia\Allegro\Model\Consumer;
 use Macopedia\Allegro\Model\Consumer\OrderStatusConsumer;
 use Macopedia\Allegro\Model\Consumer\ShipmentConsumer;
+use Macopedia\Allegro\Model\Operations\CronJobRunner;
 
 class RetryAsyncOperations
 {
@@ -21,6 +22,7 @@ class RetryAsyncOperations
     private $shipmentConsumer;
     private $stockMessageFactory;
     private $entityMessageFactory;
+    private $jobRunner;
 
     public function __construct(
         AsyncFailureRepository $failures,
@@ -29,7 +31,8 @@ class RetryAsyncOperations
         OrderStatusConsumer $orderStatusConsumer,
         ShipmentConsumer $shipmentConsumer,
         MessageInterfaceFactory $stockMessageFactory,
-        EntityMessageInterfaceFactory $entityMessageFactory
+        EntityMessageInterfaceFactory $entityMessageFactory,
+        CronJobRunner $jobRunner
     ) {
         $this->failures = $failures;
         $this->configuration = $configuration;
@@ -38,6 +41,7 @@ class RetryAsyncOperations
         $this->shipmentConsumer = $shipmentConsumer;
         $this->stockMessageFactory = $stockMessageFactory;
         $this->entityMessageFactory = $entityMessageFactory;
+        $this->jobRunner = $jobRunner;
     }
 
     public function execute(): void
@@ -45,7 +49,16 @@ class RetryAsyncOperations
         if (!$this->configuration->isAsyncRetryCronEnabled()) {
             return;
         }
+        $this->jobRunner->run('retry_async_operations', function (): array {
+            return $this->retryDue();
+        });
+    }
+
+    private function retryDue(): array
+    {
+        $metrics = ['processed' => 0, 'resolved' => 0, 'failed' => 0];
         foreach ($this->failures->getDue() as $failure) {
+            $metrics['processed']++;
             $operation = (string)$failure['operation'];
             $sourceId = (int)$failure['source_id'];
             try {
@@ -65,9 +78,13 @@ class RetryAsyncOperations
                     }
                 }
                 $this->failures->markResolved($operation, $sourceId);
+                $metrics['resolved']++;
             } catch (\Throwable $exception) {
                 // Consumers record the failed attempt with sanitized context.
+                $metrics['failed']++;
             }
         }
+
+        return $metrics;
     }
 }

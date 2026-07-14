@@ -82,6 +82,19 @@ interface ProductOfferInterface
     public function setParameters(array $parameters): self;
 
     /**
+     * Product-defining parameters sent in productSet[].product.parameters.
+     *
+     * @return array
+     */
+    public function getProductParameters(): array;
+
+    /**
+     * @param array $parameters
+     * @return $this
+     */
+    public function setProductParameters(array $parameters): self;
+
+    /**
      * @return array
      */
     public function getDeliveryOptions(): array;

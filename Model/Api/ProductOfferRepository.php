@@ -227,6 +227,11 @@ class ProductOfferRepository implements ProductOfferRepositoryInterface
         if (!empty($data['parameters']) && is_array($data['parameters'])) {
             $productOffer->setParameters($data['parameters']);
         }
+        if (!empty($data['productSet'][0]['product']['parameters'])
+            && is_array($data['productSet'][0]['product']['parameters'])
+        ) {
+            $productOffer->setProductParameters($data['productSet'][0]['product']['parameters']);
+        }
         if (!empty($data['delivery']) && is_array($data['delivery'])) {
             $productOffer->setDeliveryOptions($this->mapDeliveryOptions($data['delivery']));
         }

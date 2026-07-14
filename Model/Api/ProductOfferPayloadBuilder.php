@@ -29,6 +29,10 @@ class ProductOfferPayloadBuilder
         $productSetItem = [
             'product' => ['id' => $offer->getProductId()],
         ];
+        $productParameters = $this->normalizeParameters($offer->getProductParameters());
+        if ($productParameters) {
+            $productSetItem['product']['parameters'] = $productParameters;
+        }
         if ($offer->getResponsibleProducer()) {
             $productSetItem['responsibleProducer'] = $offer->getResponsibleProducer();
         }

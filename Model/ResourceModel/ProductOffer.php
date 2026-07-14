@@ -21,7 +21,7 @@ class ProductOffer extends AbstractResource
      */
     public function post(string $uri, array $data): array
     {
-        return $this->requestPost($uri, [], $data);
+        return $this->requestPost($uri, $data);
     }
 
     /**
@@ -42,4 +42,4 @@ class ProductOffer extends AbstractResource
     {
         return $this->requestDelete($uri);
     }
-} 
+}

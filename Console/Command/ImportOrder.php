@@ -69,10 +69,10 @@ class ImportOrder extends Command
     /**
      * @param InputInterface $input
      * @param OutputInterface $output
-     * @return void
+     * @return int
      * @throws LocalizedException
      */
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         try {
             $this->state->getAreaCode();
@@ -82,24 +82,25 @@ class ImportOrder extends Command
 
         $checkoutFormId = $input->getOption(self::NAME);
         if (!$checkoutFormId) {
-            throw new LocalizedException(__('Please enter the ID of the order you want to import'));
+            $output->writeln('<error>Please enter the checkout form ID.</error>');
+            return Command::INVALID;
         }
 
         try {
             $checkoutForm = $this->checkoutFormRepository->get($checkoutFormId);
         } catch (\Exception $e) {
             $output->writeln("Error while requesting checkout form with id '{$checkoutFormId}'");
-            return;
+            return Command::FAILURE;
         }
 
         try {
             $this->processor->processOrder($checkoutForm);
         } catch (\Exception $e) {
             $output->writeln("Error while creating order with id '{$checkoutFormId}'");
-            $output->writeln($e->getMessage());
-            return;
+            return Command::FAILURE;
         }
 
-        $output->writeln("Order with id '{$checkoutFormId}' has been successfully created");
+        $output->writeln("Checkout form '{$checkoutFormId}' has been processed successfully");
+        return Command::SUCCESS;
     }
 }

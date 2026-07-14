@@ -43,6 +43,9 @@ class ProductOfferSaveService
     /** @var OfferSaveRequestValidator */
     private $requestValidator;
 
+    /** @var ProductBrandParameterResolver */
+    private $brandParameterResolver;
+
     public function __construct(
         OfferFormDataMapper $mapper,
         ProductOfferFactory $productOfferFactory,
@@ -52,7 +55,8 @@ class ProductOfferSaveService
         OfferMappingService $offerMappingService,
         Credentials $credentials,
         Logger $logger,
-        OfferSaveRequestValidator $requestValidator
+        OfferSaveRequestValidator $requestValidator,
+        ProductBrandParameterResolver $brandParameterResolver
     ) {
         $this->mapper = $mapper;
         $this->productOfferFactory = $productOfferFactory;
@@ -63,6 +67,7 @@ class ProductOfferSaveService
         $this->credentials = $credentials;
         $this->logger = $logger;
         $this->requestValidator = $requestValidator;
+        $this->brandParameterResolver = $brandParameterResolver;
     }
 
     /**
@@ -92,6 +97,10 @@ class ProductOfferSaveService
             ->setQuantity($request->quantity)
             ->setCategory($request->categoryId)
             ->setParameters($request->parameters)
+            ->setProductParameters($this->brandParameterResolver->resolve(
+                $request->magentoProductId,
+                (int)$request->categoryId
+            ))
             ->setSellingMode([
                 'format' => 'BUY_NOW',
                 'price' => ['amount' => (string)$request->price, 'currency' => 'PLN'],
@@ -123,17 +132,13 @@ class ProductOfferSaveService
         }
 
         $offerId = $this->productOfferRepository->save($offer);
-        $mappingSaved = $this->offerMappingService->saveMapping(
-            $request->magentoProductId,
-            $offerId,
-            $request->catalogProductId
-        );
-
         $validationChecked = false;
         $validationErrors = [];
         $validationWarnings = [];
+        $sellerId = null;
         try {
             $savedOffer = $this->productOfferRepository->get($offerId);
+            $sellerId = $savedOffer->getSellerId() ?: null;
             $validationChecked = true;
             $validationErrors = $savedOffer->getValidationErrors();
             $validationWarnings = $savedOffer->getValidationWarnings();
@@ -146,6 +151,13 @@ class ProductOfferSaveService
                 'exception_type' => get_class($exception),
             ]);
         }
+
+        $mappingSaved = $this->offerMappingService->saveMapping(
+            $request->magentoProductId,
+            $offerId,
+            $request->catalogProductId,
+            $sellerId
+        );
 
         return [
             'offer_id' => $offerId,

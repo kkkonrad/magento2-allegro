@@ -15,6 +15,7 @@ use Macopedia\Allegro\Model\Offer\OfferFormDataMapper;
 use Macopedia\Allegro\Model\Offer\OfferSaveRequest;
 use Macopedia\Allegro\Model\Offer\OfferSaveRequestValidator;
 use Macopedia\Allegro\Model\Offer\ProductOfferSaveService;
+use Macopedia\Allegro\Model\Offer\ProductBrandParameterResolver;
 use Macopedia\Allegro\Model\OfferMappingService;
 use PHPUnit\Framework\TestCase;
 
@@ -69,7 +70,8 @@ class ProductOfferSaveServiceTest extends TestCase
             $mapping,
             $credentials,
             $this->createMock(Logger::class),
-            $this->createMock(OfferSaveRequestValidator::class)
+            $this->createMock(OfferSaveRequestValidator::class),
+            $this->createMock(ProductBrandParameterResolver::class)
         );
 
         $result = $service->execute([]);

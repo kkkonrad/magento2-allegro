@@ -7,6 +7,7 @@ namespace Macopedia\Allegro\Cron;
 use Macopedia\Allegro\Logger\Logger;
 use Macopedia\Allegro\Model\OrderWithErrorImporter;
 use Macopedia\Allegro\Model\Configuration;
+use Macopedia\Allegro\Model\Operations\CronJobRunner;
 
 /**
  * Class responsible for importing orders with errors from Allegro API
@@ -22,6 +23,9 @@ class ImportOrdersWithErrors
     /** @var Configuration */
     private $configuration;
 
+    /** @var CronJobRunner */
+    private $jobRunner;
+
     /**
      * @param Logger $logger
      * @param OrderWithErrorImporter $orderImporter
@@ -30,11 +34,13 @@ class ImportOrdersWithErrors
     public function __construct(
         Logger $logger,
         OrderWithErrorImporter $orderImporter,
-        Configuration $configuration
+        Configuration $configuration,
+        CronJobRunner $jobRunner
     ) {
         $this->logger = $logger;
         $this->orderImporter = $orderImporter;
         $this->configuration = $configuration;
+        $this->jobRunner = $jobRunner;
     }
 
     /**
@@ -43,8 +49,10 @@ class ImportOrdersWithErrors
     public function execute()
     {
         if ($this->configuration->isOrderRetryCronEnabled()) {
-            $this->logger->addInfo("Cronjob imported orders with errors is executed.");
-            $this->orderImporter->execute();
+            $this->logger->info('Cronjob imported orders with errors is executed.');
+            $this->jobRunner->run('retry_failed_orders', function (): array {
+                return $this->orderImporter->execute()->getMetrics();
+            });
         }
     }
 }

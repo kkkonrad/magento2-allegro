@@ -14,6 +14,7 @@ use Magento\Backend\Model\Url;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\Serialize\Serializer\Json;
 use Psr\Http\Message\ResponseInterface;
+use Macopedia\Allegro\Model\Configuration;
 
 /**
  * Class responsible for authentication with Allegro API
@@ -50,6 +51,9 @@ class Auth
     /** @var OAuthStateManager */
     private $stateManager;
 
+    /** @var Configuration */
+    private $configuration;
+
     /**
      * @param Credentials $credentials
      * @param Client $client
@@ -67,7 +71,8 @@ class Auth
         ScopeConfigInterface $scopeConfig,
         Json $json,
         ApiErrorResponseParser $errorResponseParser,
-        OAuthStateManager $stateManager
+        OAuthStateManager $stateManager,
+        Configuration $configuration
     ) {
         $this->credentials = $credentials;
         $this->client = $client;
@@ -78,6 +83,7 @@ class Auth
         $this->json = $json;
         $this->errorResponseParser = $errorResponseParser;
         $this->stateManager = $stateManager;
+        $this->configuration = $configuration;
     }
 
     /**
@@ -213,6 +219,9 @@ class Auth
                 $this->credentials->getClientSecret(),
             ],
             'query' => $query,
+            'connect_timeout' => $this->configuration->getConnectTimeout(),
+            'timeout' => $this->configuration->getRequestTimeout(),
+            'http_errors' => true,
         ];
     }
 
@@ -242,7 +251,7 @@ class Auth
     private function createAuthenticationException(
         GuzzleException $exception,
         string $grantType
-    ): ClientException {
+    ): AuthenticationException {
         $response = $exception instanceof RequestException ? $exception->getResponse() : null;
         $statusCode = $response ? $response->getStatusCode() : null;
         $errors = $response
@@ -258,14 +267,27 @@ class Auth
 
         $message = $this->errorResponseParser->format($errors);
         $cause = $exception instanceof \Exception ? $exception : null;
+        $requestId = null;
+        if ($response) {
+            foreach (['Trace-Id', 'X-Request-Id', 'Request-Id'] as $header) {
+                $value = trim($response->getHeaderLine($header));
+                if ($value !== '') {
+                    $requestId = $value;
+                    break;
+                }
+            }
+        }
 
-        return new ClientException(
+        return new AuthenticationException(
             __(
                 'Could not authenticate with Allegro.%1',
                 $message !== '' ? ' ' . $message : ''
             ),
             $cause,
-            (int)$exception->getCode()
+            (int)$exception->getCode(),
+            $statusCode,
+            $requestId,
+            $errors
         );
     }
 }

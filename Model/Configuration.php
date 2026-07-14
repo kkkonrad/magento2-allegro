@@ -15,7 +15,10 @@ class Configuration
     const ASYNC_RETRY_CRON_ENABLED_CONFIG_PATH = 'allegro/order/async_retry_cron_enabled';
     const TRACKING_NUMBER_SENDING_ENABLED_CONFIG_PATH = 'allegro/order/tracking_number_sending_enabled';
     const DEBUG_MODE_ENABLED_CONFIG_PATH = 'allegro/debug_mode/debug_mode_enabled';
+    const CONNECT_TIMEOUT_CONFIG_PATH = 'allegro/general/connect_timeout';
+    const REQUEST_TIMEOUT_CONFIG_PATH = 'allegro/general/request_timeout';
     const EAN_ATTRIBUTE_CONFIG_PATH = 'allegro/offer_create/ean_attribute';
+    const BRAND_ATTRIBUTE_CONFIG_PATH = 'allegro/offer_create/brand_attribute';
     const DESCRIPTION_ATTRIBUTE_CONFIG_PATH = 'allegro/offer_create/description_attribute';
     const PRICE_ATTRIBUTE_CONFIG_PATH = 'allegro/offer_create/price_attribute';
     const STORE_ID_CONFIG_PATH = 'allegro/order/store';
@@ -105,6 +108,22 @@ class Configuration
         return $this->scopeConfig->isSetFlag(self::DEBUG_MODE_ENABLED_CONFIG_PATH, $scopeType, $scopeCode);
     }
 
+    public function getConnectTimeout(
+        string $scopeType = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?string $scopeCode = null
+    ): int {
+        $value = (int)$this->scopeConfig->getValue(self::CONNECT_TIMEOUT_CONFIG_PATH, $scopeType, $scopeCode);
+        return $value > 0 ? min($value, 60) : 10;
+    }
+
+    public function getRequestTimeout(
+        string $scopeType = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?string $scopeCode = null
+    ): int {
+        $value = (int)$this->scopeConfig->getValue(self::REQUEST_TIMEOUT_CONFIG_PATH, $scopeType, $scopeCode);
+        return $value > 0 ? min($value, 300) : 120;
+    }
+
     /**
      * @param string $scopeType
      * @param string|null $scopeCode
@@ -190,6 +209,13 @@ class Configuration
         ?string $scopeCode = null
     ): ?string {
         return $this->scopeConfig->getValue(self::EAN_ATTRIBUTE_CONFIG_PATH, $scopeType, $scopeCode);
+    }
+
+    public function getBrandAttributeCode(
+        string $scopeType = ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+        ?string $scopeCode = null
+    ): ?string {
+        return $this->scopeConfig->getValue(self::BRAND_ATTRIBUTE_CONFIG_PATH, $scopeType, $scopeCode);
     }
 
     /**

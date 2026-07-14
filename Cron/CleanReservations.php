@@ -7,6 +7,7 @@ namespace Macopedia\Allegro\Cron;
 use Macopedia\Allegro\Logger\Logger;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Macopedia\Allegro\Model\OrderImporter\AllegroReservation;
+use Macopedia\Allegro\Model\Operations\CronJobRunner;
 
 /**
  * Class responsible for cleaning old reservations
@@ -24,6 +25,9 @@ class CleanReservations
     /** @var AllegroReservation */
     private $allegroReservation;
 
+    /** @var CronJobRunner */
+    private $jobRunner;
+
     /**
      * @param Logger $logger
      * @param ScopeConfigInterface $scopeConfig
@@ -32,18 +36,23 @@ class CleanReservations
     public function __construct(
         Logger $logger,
         ScopeConfigInterface $scopeConfig,
-        AllegroReservation $allegroReservation
+        AllegroReservation $allegroReservation,
+        CronJobRunner $jobRunner
     ) {
         $this->logger = $logger;
         $this->scopeConfig = $scopeConfig;
         $this->allegroReservation = $allegroReservation;
+        $this->jobRunner = $jobRunner;
     }
 
     public function execute()
     {
         if ($this->scopeConfig->getValue(self::RESERVATIONS_CRON_CONFIG_KEY)) {
-            $this->logger->addInfo("Cronjob clean reservations is executed.");
-            $this->allegroReservation->cleanOldReservations();
+            $this->logger->info('Cronjob clean reservations is executed.');
+            $this->jobRunner->run('clean_reservations', function (): array {
+                $this->allegroReservation->cleanOldReservations();
+                return [];
+            });
         }
     }
 }

@@ -24,8 +24,6 @@ class Client
     public const SANDBOX_API_URL = 'https://api.allegro.pl.allegrosandbox.pl/';
 
     private const MAX_REQUEST_ATTEMPTS = 3;
-    private const CONNECT_TIMEOUT_SECONDS = 10;
-    private const REQUEST_TIMEOUT_SECONDS = 120;
     private const RETRY_BASE_DELAY_MICROSECONDS = 250000;
 
     /** @var Json */
@@ -124,7 +122,7 @@ class Client
         if (isset($response['errors'])) {
             $errors = $this->errorResponseParser->parse($json);
             $message = $this->errorResponseParser->format($errors);
-            throw new ClientResponseErrorException(
+            throw new ValidationException(
                 __(
                     'Allegro API rejected the request: %1',
                     $message ?: (string)__('Unknown validation error')
@@ -192,8 +190,8 @@ class Client
         $client = $this->clientFactory->create([
             'config' => [
                 'base_uri' => $this->getApiUrl($request),
-                'connect_timeout' => self::CONNECT_TIMEOUT_SECONDS,
-                'timeout' => self::REQUEST_TIMEOUT_SECONDS,
+                'connect_timeout' => max(1, $this->config->getConnectTimeout()),
+                'timeout' => max(1, $this->config->getRequestTimeout()),
                 'http_errors' => true,
             ],
         ]);
@@ -300,7 +298,9 @@ class Client
 
         $cause = $exception instanceof \Exception ? $exception : null;
 
-        return new ClientResponseException(
+        $exceptionClass = $this->exceptionClassForStatus($statusCode);
+
+        return new $exceptionClass(
             __($message),
             $cause,
             (int)$exception->getCode(),
@@ -308,6 +308,30 @@ class Client
             $requestId,
             $errors
         );
+    }
+
+    /**
+     * @return class-string<ClientResponseException>
+     */
+    private function exceptionClassForStatus(?int $statusCode): string
+    {
+        if ($statusCode === null) {
+            return TransportException::class;
+        }
+        if (in_array($statusCode, [401, 403], true)) {
+            return AuthenticationException::class;
+        }
+        if (in_array($statusCode, [400, 409, 422], true)) {
+            return ValidationException::class;
+        }
+        if ($statusCode === 404) {
+            return NotFoundException::class;
+        }
+        if ($statusCode === 429) {
+            return RateLimitException::class;
+        }
+
+        return ApiResponseException::class;
     }
 
     private function extractRequestId(?ResponseInterface $response): ?string
