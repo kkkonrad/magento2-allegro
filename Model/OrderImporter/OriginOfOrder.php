@@ -18,12 +18,14 @@ class OriginOfOrder
      */
     public function isOrderFromAllegro(Order $order)
     {
-        if (stripos($order->getOrderFrom(), self::ALLEGRO) !== false) {
+        if (stripos((string) $order->getOrderFrom(), self::ALLEGRO) !== false) {
             return true;
         }
 
         $extensionAttributes = $order->getExtensionAttributes();
-        if ($extensionAttributes && stripos($extensionAttributes->getOrderFrom(), self::ALLEGRO) !== false) {
+        if ($extensionAttributes
+            && stripos((string) $extensionAttributes->getOrderFrom(), self::ALLEGRO) !== false
+        ) {
             return true;
         }
 
