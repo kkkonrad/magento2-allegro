@@ -1,5 +1,8 @@
 # Magento 2 — integracja Allegro
 
+> [!IMPORTANT]
+> Jest to moduł **Macopedia Allegro**, który nie jest już rozwijany ani wspierany przez Macopedia. Kod został niezależnie poprawiony oraz dostosowany do obecnej wersji Allegro REST API. Błędy i propozycje zmian należy zgłaszać bezpośrednio przez [GitHub Issues](https://github.com/kkkonrad/magento2-allegro/issues) lub na adres [admin@hosting-magento.pl](mailto:admin@hosting-magento.pl).
+
 Moduł integruje Magento 2.4 (`magento/framework ^103.0`, PHP 8.1+) z Allegro REST API. Obsługuje środowisko produkcyjne i Sandbox, Katalog Produktów Allegro, oferty produktowe, import zamówień oraz asynchroniczną synchronizację stanów, cen, statusów i przesyłek.
 
 Sekrety aplikacji oraz tokeny OAuth nie mogą być zapisywane w repozytorium. Client Secret jest szyfrowany przez backend konfiguracji Magento, a tokeny Sandbox i Production są przechowywane oddzielnie. Po wklejeniu sekretu do komunikatora należy go obrócić w panelu aplikacji Allegro.
